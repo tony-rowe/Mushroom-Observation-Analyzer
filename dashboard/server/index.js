@@ -13,6 +13,7 @@ import { loadCerts } from './ssl.js';
 import { ALL_SPECIES, CATEGORIES } from './all-species.js';
 import { getSpeciesPhotos, getQuizPhotos } from './photos.js';
 import { importByTaxonId, getAllActiveSpecies, ensureImportTable, getImportedSpecies, deleteImportedSpecies } from './import.js';
+import { ensurePhotoTable, bulkSyncAllPhotos, getAllPhotoStats, syncPhotosForSpecies } from './photo-sync.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PORT = process.env.API_PORT || 3001;
@@ -234,6 +235,32 @@ app.get('/api/field-guide/:id', (req, res) => {
   res.json(species);
 });
 
+app.get('/api/photos/stats', (_req, res) => {
+  try {
+    const stats = getAllPhotoStats();
+    res.json(stats);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/api/photos/sync-all', async (_req, res) => {
+  res.json({ status: 'started', message: 'Bulk photo sync started in background' });
+  const allSpecies = getAllActiveSpecies();
+  bulkSyncAllPhotos(allSpecies).then(result => {
+    console.log(`Bulk photo sync complete: ${result.totalPhotos} total photos across ${result.speciesSynced} species`);
+  }).catch(err => console.error('Bulk photo sync error:', err));
+});
+
+app.post('/api/photos/sync/:taxonId', async (req, res) => {
+  try {
+    const result = await syncPhotosForSpecies(parseInt(req.params.taxonId));
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 app.get('/api/photos/:taxonId', async (req, res) => {
   try {
     const taxonId = parseInt(req.params.taxonId);
@@ -304,6 +331,7 @@ async function start() {
   }
 
   ensureImportTable();
+  ensurePhotoTable();
 
   const allSpecies = getAllActiveSpecies();
   console.log(`Starting background sync of ${allSpecies.length} species...`);
@@ -323,6 +351,11 @@ async function start() {
     }
   }
   console.log('Initial sync complete.');
+
+  console.log('\nStarting bulk photo sync (background)...');
+  bulkSyncAllPhotos(allSpecies).then(result => {
+    console.log(`\n📸 Photo sync complete: ${result.totalPhotos.toLocaleString()} total photos across ${result.speciesSynced} species\n`);
+  }).catch(err => console.error('Photo sync error:', err));
 
   console.log('\nRunning prediction backtest and calibration...');
   try {

@@ -1,4 +1,5 @@
 import { getCached, setCache } from './cache.js';
+import { getCachedPhotos, getCachedPhotoCount } from './photo-sync.js';
 
 const API_BASE = 'https://api.inaturalist.org/v1';
 const PHOTO_CACHE_TTL = 86400;
@@ -15,6 +16,24 @@ async function rateFetch(url) {
 }
 
 async function getSpeciesPhotos(taxonId, count = 30) {
+  const bulkCount = getCachedPhotoCount(taxonId);
+  if (bulkCount >= count) {
+    const rows = getCachedPhotos(taxonId, count);
+    return rows.map(r => ({
+      id: r.id,
+      observationId: r.observation_id,
+      url: r.url_medium,
+      urlLarge: r.url_large,
+      urlOriginal: r.url_original,
+      attribution: r.attribution,
+      license: r.license,
+      observedOn: r.observed_on,
+      placeGuess: r.place_guess,
+      qualityGrade: r.quality_grade,
+      userLogin: r.user_login
+    }));
+  }
+
   const cacheKey = `photos_${taxonId}_${count}`;
   const cached = getCached(cacheKey, PHOTO_CACHE_TTL);
   if (cached) return cached;
