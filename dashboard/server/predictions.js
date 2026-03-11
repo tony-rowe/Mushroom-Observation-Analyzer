@@ -1,6 +1,6 @@
 import { OREGON_REGIONS, SPECIES_ECOLOGY } from './regions.js';
-import { PNW_SPECIES } from './species.js';
 import { getHeatmapData } from './cache.js';
+import { getActiveSpeciesForPredictions, getEcologyForSpecies } from './import.js';
 
 let calibratedWeights = null;
 
@@ -59,7 +59,7 @@ function scoreSeasonality(species, month) {
 
 function scoreHabitat(species, region) {
   const max = getMaxForFactor('habitat');
-  const ecology = SPECIES_ECOLOGY[species.id];
+  const ecology = getEcologyForSpecies(species.id);
   if (!ecology) return { score: Math.round(max * 0.4), max, label: 'Unknown', detail: '' };
 
   const regionForests = new Set(region.forestTypes);
@@ -85,7 +85,7 @@ function scoreHabitat(species, region) {
 
 function scoreElevation(species, region) {
   const max = getMaxForFactor('elevation');
-  const ecology = SPECIES_ECOLOGY[species.id];
+  const ecology = getEcologyForSpecies(species.id);
   if (!ecology?.elevationRange) return { score: Math.round(max * 0.5), max, label: 'Unknown', detail: '' };
 
   const { min: sMin, max: sMax } = ecology.elevationRange;
@@ -112,7 +112,7 @@ function scoreElevation(species, region) {
 
 function scorePrecipitation(species, region, month) {
   const max = getMaxForFactor('precipitation');
-  const ecology = SPECIES_ECOLOGY[species.id];
+  const ecology = getEcologyForSpecies(species.id);
   if (!ecology) return { score: Math.round(max * 0.5), max, label: 'Unknown', detail: '' };
 
   const monthPrecip = region.monthlyPrecip[month - 1] || 0;
@@ -130,7 +130,7 @@ function scorePrecipitation(species, region, month) {
 
 function scoreTemperature(species, region, month) {
   const maxPts = getMaxForFactor('temperature');
-  const ecology = SPECIES_ECOLOGY[species.id];
+  const ecology = getEcologyForSpecies(species.id);
   if (!ecology?.tempRange) return { score: Math.round(maxPts * 0.5), max: maxPts, label: 'Unknown', detail: '' };
 
   const temp = region.monthlyTemp[month - 1];
@@ -184,7 +184,7 @@ function generatePrediction(species, region, month) {
     (precipScore.max || getMaxForFactor('precipitation')) +
     (tempScore.max || getMaxForFactor('temperature')) + 10;
 
-  const ecology = SPECIES_ECOLOGY[species.id] || {};
+  const ecology = getEcologyForSpecies(species.id) || {};
 
   const pct = totalScore / maxScore;
   let confidence = 'low';
@@ -212,10 +212,12 @@ function generatePrediction(species, region, month) {
   };
 }
 
-function getPredictions(month) {
+function getPredictions(month, category) {
   const predictions = [];
+  let pool = getActiveSpeciesForPredictions();
+  if (category && category !== 'all') pool = pool.filter(s => s.category === category);
 
-  for (const species of PNW_SPECIES) {
+  for (const species of pool) {
     for (const region of OREGON_REGIONS) {
       const pred = generatePrediction(species, region, month);
       predictions.push({
@@ -230,17 +232,19 @@ function getPredictions(month) {
   return predictions;
 }
 
-function getRegionPredictions(regionId, month) {
+function getRegionPredictions(regionId, month, category) {
   const region = OREGON_REGIONS.find(r => r.id === regionId);
   if (!region) return [];
-  return PNW_SPECIES.map(species => {
+  let pool = getActiveSpeciesForPredictions();
+  if (category && category !== 'all') pool = pool.filter(s => s.category === category);
+  return pool.map(species => {
     const pred = generatePrediction(species, region, month);
     return { species: { id: species.id, commonName: species.commonName, emoji: species.emoji, color: species.color, season: species.season }, ...pred };
   }).sort((a, b) => b.score - a.score);
 }
 
 function getSpeciesPredictions(speciesId, month) {
-  const species = PNW_SPECIES.find(s => s.id === speciesId);
+  const species = getActiveSpeciesForPredictions().find(s => s.id === speciesId);
   if (!species) return [];
   return OREGON_REGIONS.map(region => {
     const pred = generatePrediction(species, region, month);
@@ -248,8 +252,8 @@ function getSpeciesPredictions(speciesId, month) {
   }).sort((a, b) => b.score - a.score);
 }
 
-function getTopPicks(month, limit = 10) {
-  const all = getPredictions(month);
+function getTopPicks(month, limit = 10, category) {
+  const all = getPredictions(month, category);
   return all.slice(0, limit);
 }
 

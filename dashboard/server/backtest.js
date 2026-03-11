@@ -1,6 +1,6 @@
 import { OREGON_REGIONS, SPECIES_ECOLOGY } from './regions.js';
-import { PNW_SPECIES } from './species.js';
 import { getAllObservations } from './cache.js';
+import { getActiveSpeciesForPredictions, getEcologyForSpecies } from './import.js';
 
 function pointInPolygon(lat, lon, polygon) {
   let inside = false;
@@ -44,7 +44,7 @@ function buildActualDensityMatrix() {
 }
 
 function rawScore(species, region, month) {
-  const ecology = SPECIES_ECOLOGY[species.id] || {};
+  const ecology = getEcologyForSpecies(species.id) || {};
   const season = species.season || {};
 
   const isPeak = season.peak?.includes(month);
@@ -70,11 +70,12 @@ function rawScore(species, region, month) {
   }
 
   const elevRange = ecology.elevationRange || { min: 0, max: 3000 };
+  const speciesElevSpan = elevRange.max - elevRange.min;
   const overlapMin = Math.max(elevRange.min, region.elevation?.min || 0);
   const overlapMax = Math.min(elevRange.max, region.elevation?.max || 3000);
-  const elevRaw = overlapMin <= overlapMax
-    ? Math.min(1, (overlapMax - overlapMin) / (elevRange.max - elevRange.min))
-    : 0;
+  const elevRaw = speciesElevSpan > 0 && overlapMin <= overlapMax
+    ? Math.min(1, (overlapMax - overlapMin) / speciesElevSpan)
+    : overlapMin <= overlapMax ? 0.5 : 0;
 
   const monthPrecip = region.monthlyPrecip?.[month - 1] || 0;
   const prevPrecip = region.monthlyPrecip?.[(month - 2 + 12) % 12] || 0;
@@ -171,12 +172,12 @@ function runBacktest() {
   const { matrix, assigned, unassigned, total } = buildActualDensityMatrix();
   console.log(`  Observations: ${total} total, ${assigned} assigned to regions, ${unassigned} unassigned`);
 
-  const taxonToSpecies = {};
-  PNW_SPECIES.forEach(s => { taxonToSpecies[s.taxonId] = s; });
+  const activeSpecies = getActiveSpeciesForPredictions();
+  console.log(`  Species in backtest: ${activeSpecies.length}`);
 
   const dataPoints = [];
 
-  for (const species of PNW_SPECIES) {
+  for (const species of activeSpecies) {
     for (const region of OREGON_REGIONS) {
       for (let month = 1; month <= 12; month++) {
         const key = `${species.taxonId}|${region.id}|${month}`;
@@ -206,7 +207,8 @@ function runBacktest() {
   const correlations = {};
   for (let f = 0; f < 5; f++) {
     const col = X.map(row => row[f]);
-    correlations[factorNames[f]] = pearsonCorrelation(col, y);
+    const corr = pearsonCorrelation(col, y);
+    correlations[factorNames[f]] = isFinite(corr) ? corr : 0;
   }
 
   console.log('  Per-factor correlations with actual observation density:');
@@ -242,7 +244,7 @@ function runBacktest() {
   const corrAfter = pearsonCorrelation(predictedAfter, y);
 
   const perSpecies = {};
-  for (const species of PNW_SPECIES) {
+  for (const species of activeSpecies) {
     const speciesPoints = dataPoints
       .map((d, i) => ({ ...d, normActual: y[i], predBefore: predictedBefore[i], predAfter: predictedAfter[i] }))
       .filter(d => d.speciesId === species.id);

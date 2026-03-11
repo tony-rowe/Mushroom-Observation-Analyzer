@@ -410,6 +410,242 @@ const SPECIES_ECOLOGY = {
     fruiting: { daysAfterRain: 21, minRainMm: 60 },
     tips: 'Fall-fruiting truffle found underground near Douglas fir. Garlicky, herbaceous aroma. Look where squirrels have been digging — they eat truffles. Second-growth fir stands (20-50 years) are ideal.',
     accessTip: 'Douglas fir plantations in the Coast Range foothills and Willamette Valley margins.'
+  },
+
+  // ═══════════ BERRIES ═══════════
+  'huckleberry': {
+    preferredForests: ['mountain_hemlock', 'noble_fir', 'pacific_silver_fir', 'douglas_fir'],
+    elevationRange: { min: 900, max: 1800 },
+    optimalPrecipMonth: 60, tempRange: { min: 5, max: 22, optimal: 16 },
+    soilPreference: ['volcanic', 'sandy_loam', 'acidic'],
+    tips: 'Higher-elevation berry — look on open ridges, burns, and meadow edges at 3000-6000ft. Ripe when deep purple-black and easily detached.',
+    accessTip: 'Cascade passes, Mt. Hood, Santiam Pass. Forest roads at 4000ft+ with recent burns.'
+  },
+  'salal': {
+    preferredForests: ['sitka_spruce', 'western_hemlock', 'douglas_fir', 'shore_pine'],
+    elevationRange: { min: 0, max: 600 },
+    optimalPrecipMonth: 50, tempRange: { min: 8, max: 25, optimal: 18 },
+    soilPreference: ['sandy', 'loam', 'acidic'],
+    tips: 'Ubiquitous coastal understory shrub. Berries are mealy but sweet, best in jams/syrups. Available everywhere near the coast.',
+    accessTip: 'Any coastal trail or forest — cannot be missed.'
+  },
+  'thimbleberry': {
+    preferredForests: ['douglas_fir', 'bigleaf_maple', 'red_alder', 'western_red_cedar'],
+    elevationRange: { min: 0, max: 1200 },
+    optimalPrecipMonth: 40, tempRange: { min: 12, max: 28, optimal: 20 },
+    soilPreference: ['loam', 'rich', 'moist'],
+    tips: 'Forest edge berry. Very fragile — eat on the trail, does not transport. Look for large maple-like leaves (no thorns).',
+    accessTip: 'Forest edges and road cuts throughout the Coast Range and Cascades.'
+  },
+  'salmonberry': {
+    preferredForests: ['red_alder', 'bigleaf_maple', 'sitka_spruce', 'western_red_cedar'],
+    elevationRange: { min: 0, max: 800 },
+    optimalPrecipMonth: 60, tempRange: { min: 10, max: 22, optimal: 16 },
+    soilPreference: ['moist', 'alluvial', 'rich'],
+    tips: 'One of the first berries of the season. Found along streams. Orange or red berries. Flavor varies — pick the sweetest.',
+    accessTip: 'Streambanks and moist areas along coast and Coast Range trails.'
+  },
+  'oregon-grape': {
+    preferredForests: ['douglas_fir', 'oregon_oak', 'ponderosa_pine', 'bigleaf_maple'],
+    elevationRange: { min: 0, max: 1200 },
+    optimalPrecipMonth: 30, tempRange: { min: 8, max: 28, optimal: 18 },
+    soilPreference: ['rocky', 'loam', 'well_drained'],
+    tips: 'Holly-like leaves, dusty blue berries in clusters. Very tart — makes excellent jelly with sugar.',
+    accessTip: 'Forest understory everywhere. State flower — very common.'
+  },
+  'trailing-blackberry': {
+    preferredForests: ['douglas_fir', 'red_alder', 'bigleaf_maple'],
+    elevationRange: { min: 0, max: 800 },
+    optimalPrecipMonth: 30, tempRange: { min: 12, max: 28, optimal: 20 },
+    soilPreference: ['loam', 'sandy', 'well_drained'],
+    tips: 'Native PNW blackberry. Low trailing vine, smaller berries than Himalayan. FAR superior flavor.',
+    accessTip: 'Forest edges and clearings. Distinguish from invasive Himalayan by smaller size and trailing habit.'
+  },
+  'evergreen-huckleberry': {
+    preferredForests: ['sitka_spruce', 'western_hemlock', 'shore_pine', 'douglas_fir'],
+    elevationRange: { min: 0, max: 500 },
+    optimalPrecipMonth: 80, tempRange: { min: 5, max: 20, optimal: 14 },
+    soilPreference: ['acidic', 'sandy', 'loam'],
+    tips: 'Coastal low-elevation huckleberry. Small glossy evergreen leaves. Available later than mountain huckleberry.',
+    accessTip: 'Coastal forests and edges, especially Tillamook and Siuslaw NF.'
+  },
+  'red-huckleberry': {
+    preferredForests: ['douglas_fir', 'western_hemlock', 'western_red_cedar'],
+    elevationRange: { min: 0, max: 1000 },
+    optimalPrecipMonth: 50, tempRange: { min: 8, max: 24, optimal: 16 },
+    soilPreference: ['organic', 'acidic', 'rotting_wood'],
+    tips: 'Grows on nurse logs/stumps. Bright translucent red berries. Green angular stems. Tangy flavor.',
+    accessTip: 'Old-growth forests with large nurse logs. Coast Range and western Cascades.'
+  },
+  'blue-elderberry': {
+    preferredForests: ['red_alder', 'bigleaf_maple', 'oregon_oak', 'cottonwood'],
+    elevationRange: { min: 0, max: 800 },
+    optimalPrecipMonth: 30, tempRange: { min: 12, max: 30, optimal: 22 },
+    soilPreference: ['alluvial', 'rich', 'moist'],
+    tips: 'MUST be cooked — raw elderberries are toxic. Flat-topped blue-black clusters. Makes syrup, wine, cordial.',
+    accessTip: 'Streambanks and forest edges in the Willamette Valley and Rogue Valley.'
+  },
+
+  // ═══════════ PLANTS ═══════════
+  'stinging-nettle': {
+    preferredForests: ['red_alder', 'bigleaf_maple', 'cottonwood', 'douglas_fir'],
+    elevationRange: { min: 0, max: 1000 },
+    optimalPrecipMonth: 80, tempRange: { min: 5, max: 20, optimal: 12 },
+    soilPreference: ['rich', 'alluvial', 'moist', 'nitrogen_rich'],
+    tips: 'Harvest with gloves in early spring when tops are tender. Cook neutralizes sting. Incredibly nutritious — more protein than spinach.',
+    accessTip: 'Streambanks, moist forest edges, anywhere with rich disturbed soil.'
+  },
+  'miners-lettuce': {
+    preferredForests: ['douglas_fir', 'bigleaf_maple', 'red_alder', 'oregon_oak'],
+    elevationRange: { min: 0, max: 800 },
+    optimalPrecipMonth: 60, tempRange: { min: 5, max: 18, optimal: 12 },
+    soilPreference: ['loam', 'moist', 'shady'],
+    tips: 'Unmistakable round leaf with stem through center. Mild lettuce flavor. Eat raw in salads. Best in early spring before it bolts.',
+    accessTip: 'Moist shady areas in low-elevation forests, gardens, and woodland edges.'
+  },
+  'wood-sorrel': {
+    preferredForests: ['douglas_fir', 'western_hemlock', 'western_red_cedar', 'sitka_spruce'],
+    elevationRange: { min: 0, max: 1000 },
+    optimalPrecipMonth: 80, tempRange: { min: 5, max: 22, optimal: 14 },
+    soilPreference: ['organic', 'moist', 'acidic'],
+    tips: 'Clover-like with lemony tang. Eat sparingly — contains oxalic acid. Perfect trailside nibble.',
+    accessTip: 'Carpets the floor of old-growth coniferous forests. Everywhere in moist PNW forests.'
+  },
+  'cattail': {
+    preferredForests: [],
+    elevationRange: { min: 0, max: 600 },
+    optimalPrecipMonth: 40, tempRange: { min: 5, max: 28, optimal: 18 },
+    soilPreference: ['wetland', 'alluvial', 'mucky'],
+    tips: '"Supermarket of the swamp." Spring shoots, pollen in June, root starch year-round. Multiple edible parts.',
+    accessTip: 'Marshes, pond edges, ditches. Willamette Valley and coastal wetlands.'
+  },
+  'dandelion': {
+    preferredForests: [],
+    elevationRange: { min: 0, max: 1000 },
+    optimalPrecipMonth: 30, tempRange: { min: 5, max: 25, optimal: 15 },
+    soilPreference: ['any', 'disturbed', 'lawn'],
+    tips: 'Entire plant edible. Young leaves in salads, flowers for wine/fritters, roots for tea/coffee substitute.',
+    accessTip: 'Everywhere — lawns, fields, gardens. Avoid sprayed areas.'
+  },
+  'chickweed': {
+    preferredForests: [],
+    elevationRange: { min: 0, max: 600 },
+    optimalPrecipMonth: 40, tempRange: { min: 2, max: 18, optimal: 10 },
+    soilPreference: ['moist', 'rich', 'disturbed'],
+    tips: 'Mild lettuce-like flavor. Available almost year-round. Look for the single line of hair on the stem.',
+    accessTip: 'Gardens, moist disturbed areas. One of the earliest spring greens.'
+  },
+  'lambsquarters': {
+    preferredForests: [],
+    elevationRange: { min: 0, max: 800 },
+    optimalPrecipMonth: 25, tempRange: { min: 10, max: 30, optimal: 20 },
+    soilPreference: ['rich', 'disturbed', 'garden'],
+    tips: 'Wild spinach relative. Diamond-shaped leaves with white powdery coating. Cook like spinach.',
+    accessTip: 'Gardens, farms, disturbed soils. Common summer "weed."'
+  },
+  'bracken-fern': {
+    preferredForests: ['douglas_fir', 'ponderosa_pine', 'red_alder'],
+    elevationRange: { min: 0, max: 1500 },
+    optimalPrecipMonth: 50, tempRange: { min: 8, max: 22, optimal: 14 },
+    soilPreference: ['acidic', 'sandy', 'well_drained'],
+    tips: 'Fiddleheads only — tightly curled young fronds in spring. Must blanch before cooking.',
+    accessTip: 'Open forests, clearings, burns. Very common fern.'
+  },
+
+  // ═══════════ FLOWERS ═══════════
+  'fireweed': {
+    preferredForests: ['lodgepole_pine', 'douglas_fir'],
+    elevationRange: { min: 0, max: 2000 },
+    optimalPrecipMonth: 30, tempRange: { min: 10, max: 28, optimal: 18 },
+    soilPreference: ['disturbed', 'burned', 'sandy'],
+    tips: 'Young shoots like asparagus in spring. Flowers for jelly/tea in summer. Colonizes burns.',
+    accessTip: 'Burns, clearings, roadsides. Spectacular pink displays in summer.'
+  },
+  'red-clover': {
+    preferredForests: [],
+    elevationRange: { min: 0, max: 1000 },
+    optimalPrecipMonth: 30, tempRange: { min: 8, max: 25, optimal: 16 },
+    soilPreference: ['loam', 'lawn', 'meadow'],
+    tips: 'Flower heads edible raw or dried for tea. Very common lawn flower.',
+    accessTip: 'Lawns, fields, meadows everywhere.'
+  },
+  'nootka-rose': {
+    preferredForests: ['douglas_fir', 'red_alder', 'bigleaf_maple', 'oregon_oak'],
+    elevationRange: { min: 0, max: 1000 },
+    optimalPrecipMonth: 30, tempRange: { min: 5, max: 25, optimal: 15 },
+    soilPreference: ['loam', 'well_drained'],
+    tips: 'Petals for salads/tea in spring. Rose hips in fall — extremely high vitamin C. Make syrup or jelly.',
+    accessTip: 'Forest edges, streambanks. Common native rose.'
+  },
+
+  // ═══════════ SEAWEED ═══════════
+  'bull-kelp': {
+    preferredForests: [],
+    elevationRange: { min: 0, max: 0 },
+    optimalPrecipMonth: 0, tempRange: { min: 5, max: 18, optimal: 12 },
+    soilPreference: ['rocky_coast', 'subtidal'],
+    tips: 'Harvest fresh from stipe. Makes pickles, relish, chips. Rich in iodine and umami.',
+    accessTip: 'Rocky Oregon coastline. Also washes ashore after storms.'
+  },
+  'sea-lettuce': {
+    preferredForests: [],
+    elevationRange: { min: 0, max: 0 },
+    optimalPrecipMonth: 0, tempRange: { min: 5, max: 20, optimal: 12 },
+    soilPreference: ['intertidal', 'rocky'],
+    tips: 'Bright green sheets in tide pools. Eat raw or dry for seasoning flakes.',
+    accessTip: 'Intertidal rocks along Oregon coast. Best at low tide.'
+  },
+  'dulse': {
+    preferredForests: [],
+    elevationRange: { min: 0, max: 0 },
+    optimalPrecipMonth: 0, tempRange: { min: 5, max: 16, optimal: 10 },
+    soilPreference: ['subtidal', 'rocky'],
+    tips: 'Red-purple fronds. Fry until crispy for bacon-like flavor. Incredible umami.',
+    accessTip: 'Lower intertidal zone on rocky coast. Best at very low tides.'
+  },
+
+  // ═══════════ FISH / MARINE ═══════════
+  'chinook-salmon': {
+    preferredForests: [],
+    elevationRange: { min: 0, max: 500 },
+    optimalPrecipMonth: 60, tempRange: { min: 5, max: 18, optimal: 12 },
+    soilPreference: ['river', 'stream'],
+    tips: 'Oregon\'s king salmon. Multiple runs — spring Chinook (May-Jun) and fall Chinook (Sep-Oct). Check ODFW regulations.',
+    accessTip: 'Columbia, Willamette, Rogue, Umpqua rivers. Bank fishing and boat fishing.'
+  },
+  'steelhead': {
+    preferredForests: [],
+    elevationRange: { min: 0, max: 500 },
+    optimalPrecipMonth: 80, tempRange: { min: 2, max: 14, optimal: 8 },
+    soilPreference: ['river', 'stream'],
+    tips: 'Winter steelhead (Dec-Mar) and summer steelhead (Jun-Sep). Check ODFW regulations for open rivers.',
+    accessTip: 'Coastal rivers and Cascade streams. Clackamas, Sandy, Wilson, Nestucca rivers.'
+  },
+  'dungeness-crab': {
+    preferredForests: [],
+    elevationRange: { min: 0, max: 0 },
+    optimalPrecipMonth: 0, tempRange: { min: 5, max: 16, optimal: 10 },
+    soilPreference: ['bay', 'estuary', 'ocean'],
+    tips: 'Commercial season opens December. Recreational crabbing in bays year-round. Use crab rings or pots with chicken/fish bait.',
+    accessTip: 'Tillamook Bay, Yaquina Bay, Coos Bay. Also jetty and pier crabbing.'
+  },
+  'razor-clam': {
+    preferredForests: [],
+    elevationRange: { min: 0, max: 0 },
+    optimalPrecipMonth: 0, tempRange: { min: 5, max: 16, optimal: 10 },
+    soilPreference: ['sandy_beach', 'ocean'],
+    tips: 'Dig during minus tides. Look for "shows" (dimples in wet sand). Dig fast — they\'re quick. Check ODFW for open digs.',
+    accessTip: 'Clatsop Beach, Long Beach, Winchester Bay. Requires shellfish license.'
+  },
+
+  // ═══════════ NUTS ═══════════
+  'beaked-hazelnut': {
+    preferredForests: ['douglas_fir', 'bigleaf_maple', 'red_alder', 'oregon_oak'],
+    elevationRange: { min: 0, max: 800 },
+    optimalPrecipMonth: 30, tempRange: { min: 10, max: 28, optimal: 18 },
+    soilPreference: ['loam', 'well_drained'],
+    tips: 'Native hazelnut in beaked husks. Smaller than commercial but great flavor. Harvest in fall before squirrels get them.',
+    accessTip: 'Forest edges and streambanks. Willamette Valley and Coast Range foothills.'
   }
 };
 

@@ -12,6 +12,7 @@ import { runBacktest } from './backtest.js';
 import { loadCerts } from './ssl.js';
 import { ALL_SPECIES, CATEGORIES } from './all-species.js';
 import { getSpeciesPhotos, getQuizPhotos } from './photos.js';
+import { importByTaxonId, getAllActiveSpecies, ensureImportTable, getImportedSpecies, deleteImportedSpecies } from './import.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PORT = process.env.API_PORT || 3001;
@@ -24,13 +25,16 @@ app.use(express.json());
 const syncProgress = new Map();
 let lastBacktestResult = null;
 
-app.get('/api/species', (_req, res) => {
-  res.json({ species: PNW_SPECIES, placeIds: PNW_PLACE_IDS });
+app.get('/api/species', (req, res) => {
+  const category = req.query.category;
+  let species = getAllActiveSpecies();
+  if (category && category !== 'all') species = species.filter(s => s.category === category);
+  res.json({ species, categories: CATEGORIES, placeIds: PNW_PLACE_IDS });
 });
 
 app.get('/api/species/:id', async (req, res) => {
   try {
-    const species = PNW_SPECIES.find(s => s.id === req.params.id);
+    const species = getAllActiveSpecies().find(s => s.id === req.params.id);
     if (!species) return res.status(404).json({ error: 'Species not found' });
 
     const [taxonDetails, stats] = await Promise.all([
@@ -94,9 +98,10 @@ app.get('/api/sync-progress', (_req, res) => {
 app.get('/api/stats', (_req, res) => {
   try {
     const stats = getGlobalStats();
-    const speciesStats = PNW_SPECIES.map(s => {
+    const allSpecies = getAllActiveSpecies();
+    const speciesStats = allSpecies.map(s => {
       const sStats = getObservationStats(s.taxonId);
-      return { id: s.id, taxonId: s.taxonId, commonName: s.commonName, ...sStats };
+      return { id: s.id, taxonId: s.taxonId, commonName: s.commonName, category: s.category, emoji: s.emoji, ...sStats };
     });
     res.json({ global: stats, species: speciesStats });
   } catch (err) {
@@ -118,7 +123,8 @@ app.get('/api/predictions', (req, res) => {
   try {
     const month = parseInt(req.query.month) || (new Date().getMonth() + 1);
     const limit = parseInt(req.query.limit) || 15;
-    const topPicks = getTopPicks(month, limit);
+    const category = req.query.category;
+    const topPicks = getTopPicks(month, limit, category);
     res.json({ month, calibrated: !!getCalibration(), topPicks });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -185,9 +191,37 @@ app.get('/api/backtest', (_req, res) => {
   res.json({ calibration: lastBacktestResult, calibrated: !!getCalibration() });
 });
 
+app.post('/api/import', async (req, res) => {
+  try {
+    const { taxonId } = req.body;
+    if (!taxonId || isNaN(parseInt(taxonId))) {
+      return res.status(400).json({ error: 'Valid taxonId required' });
+    }
+    const result = await importByTaxonId(parseInt(taxonId));
+    res.json(result);
+  } catch (err) {
+    console.error('Import error:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.get('/api/imported', (_req, res) => {
+  const imported = getImportedSpecies();
+  res.json({ species: imported, count: imported.length });
+});
+
+app.delete('/api/imported/:id', (req, res) => {
+  try {
+    deleteImportedSpecies(req.params.id);
+    res.json({ status: 'deleted' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 app.get('/api/field-guide', (req, res) => {
   const category = req.query.category;
-  let species = ALL_SPECIES;
+  let species = getAllActiveSpecies();
   if (category && category !== 'all') {
     species = species.filter(s => s.category === category);
   }
@@ -195,7 +229,7 @@ app.get('/api/field-guide', (req, res) => {
 });
 
 app.get('/api/field-guide/:id', (req, res) => {
-  const species = ALL_SPECIES.find(s => s.id === req.params.id);
+  const species = getAllActiveSpecies().find(s => s.id === req.params.id);
   if (!species) return res.status(404).json({ error: 'Species not found' });
   res.json(species);
 });
@@ -269,8 +303,11 @@ async function start() {
     }
   }
 
-  console.log('Starting background sync of all species...');
-  for (const species of PNW_SPECIES) {
+  ensureImportTable();
+
+  const allSpecies = getAllActiveSpecies();
+  console.log(`Starting background sync of ${allSpecies.length} species...`);
+  for (const species of allSpecies) {
     syncProgress.set(species.taxonId, true);
     try {
       const result = await syncSpecies(species.taxonId);
