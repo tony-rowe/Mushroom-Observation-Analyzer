@@ -2,6 +2,22 @@ import { OREGON_REGIONS, SPECIES_ECOLOGY } from './regions.js';
 import { PNW_SPECIES } from './species.js';
 import { getHeatmapData } from './cache.js';
 
+let calibratedWeights = null;
+
+function setCalibration(cal) {
+  if (!cal?.factorWeights) return;
+  calibratedWeights = {
+    season: cal.factorWeights.season.max,
+    habitat: cal.factorWeights.habitat.max,
+    elevation: cal.factorWeights.elevation.max,
+    precipitation: cal.factorWeights.precipitation.max,
+    temperature: cal.factorWeights.temperature.max
+  };
+  console.log('Prediction engine calibrated:', calibratedWeights);
+}
+
+function getCalibration() { return calibratedWeights; }
+
 function pointInPolygon(lat, lon, polygon) {
   let inside = false;
   for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
@@ -14,9 +30,15 @@ function pointInPolygon(lat, lon, polygon) {
   return inside;
 }
 
+function getMaxForFactor(factor) {
+  const defaults = { season: 40, habitat: 25, elevation: 15, precipitation: 10, temperature: 10 };
+  return calibratedWeights?.[factor] ?? defaults[factor];
+}
+
 function scoreSeasonality(species, month) {
+  const max = getMaxForFactor('season');
   const season = species.season;
-  if (!season) return { score: 0, label: 'No season data', detail: '' };
+  if (!season) return { score: 0, max, label: 'No season data', detail: '' };
 
   const isPeak = season.peak?.includes(month);
   const inSeason = (() => {
@@ -29,15 +51,16 @@ function scoreSeasonality(species, month) {
     return month === before || month === after;
   })();
 
-  if (isPeak) return { score: 40, label: 'Peak season', detail: `Peak fruiting month for ${species.commonName}` };
-  if (inSeason) return { score: 28, label: 'In season', detail: `Active fruiting period` };
-  if (adjacent) return { score: 12, label: 'Shoulder season', detail: `Just outside main season — early/late finds possible` };
-  return { score: 0, label: 'Out of season', detail: `Not expected to fruit this month` };
+  if (isPeak) return { score: max, max, label: 'Peak season', detail: `Peak fruiting month for ${species.commonName}` };
+  if (inSeason) return { score: Math.round(max * 0.7), max, label: 'In season', detail: `Active fruiting period` };
+  if (adjacent) return { score: Math.round(max * 0.3), max, label: 'Shoulder season', detail: `Just outside main season — early/late finds possible` };
+  return { score: 0, max, label: 'Out of season', detail: `Not expected to fruit this month` };
 }
 
 function scoreHabitat(species, region) {
+  const max = getMaxForFactor('habitat');
   const ecology = SPECIES_ECOLOGY[species.id];
-  if (!ecology) return { score: 10, label: 'Unknown', detail: '' };
+  if (!ecology) return { score: Math.round(max * 0.4), max, label: 'Unknown', detail: '' };
 
   const regionForests = new Set(region.forestTypes);
   const preferredForests = ecology.preferredForests || [];
@@ -47,22 +70,23 @@ function scoreHabitat(species, region) {
       region.soilTypes.includes(s) || s === 'disturbed'
     );
     return hasSoil
-      ? { score: 20, label: 'Suitable habitat', detail: `Soil conditions match (${region.name})` }
-      : { score: 10, label: 'Marginal habitat', detail: 'May occur in disturbed areas' };
+      ? { score: Math.round(max * 0.8), max, label: 'Suitable habitat', detail: `Soil conditions match (${region.name})` }
+      : { score: Math.round(max * 0.4), max, label: 'Marginal habitat', detail: 'May occur in disturbed areas' };
   }
 
   const matches = preferredForests.filter(f => regionForests.has(f));
   const ratio = matches.length / preferredForests.length;
 
-  if (ratio >= 0.5) return { score: 25, label: 'Excellent habitat', detail: `Key tree species present: ${matches.join(', ').replace(/_/g, ' ')}` };
-  if (ratio >= 0.25) return { score: 18, label: 'Good habitat', detail: `Some preferred trees: ${matches.join(', ').replace(/_/g, ' ')}` };
-  if (matches.length > 0) return { score: 12, label: 'Partial habitat', detail: `Limited preferred trees present` };
-  return { score: 3, label: 'Poor habitat', detail: 'Preferred tree species not present in this zone' };
+  if (ratio >= 0.5) return { score: max, max, label: 'Excellent habitat', detail: `Key tree species present: ${matches.join(', ').replace(/_/g, ' ')}` };
+  if (ratio >= 0.25) return { score: Math.round(max * 0.72), max, label: 'Good habitat', detail: `Some preferred trees: ${matches.join(', ').replace(/_/g, ' ')}` };
+  if (matches.length > 0) return { score: Math.round(max * 0.48), max, label: 'Partial habitat', detail: `Limited preferred trees present` };
+  return { score: Math.round(max * 0.12), max, label: 'Poor habitat', detail: 'Preferred tree species not present in this zone' };
 }
 
 function scoreElevation(species, region) {
+  const max = getMaxForFactor('elevation');
   const ecology = SPECIES_ECOLOGY[species.id];
-  if (!ecology?.elevationRange) return { score: 8, label: 'Unknown', detail: '' };
+  if (!ecology?.elevationRange) return { score: Math.round(max * 0.5), max, label: 'Unknown', detail: '' };
 
   const { min: sMin, max: sMax } = ecology.elevationRange;
   const rTypical = region.elevation.typical;
@@ -78,17 +102,18 @@ function scoreElevation(species, region) {
     const coverage = overlapRange / speciesRange;
 
     if (rTypical >= sMin && rTypical <= sMax) {
-      if (coverage >= 0.5) return { score: 15, label: 'Ideal elevation', detail: `Region spans ${rMin}-${rMax}m, species prefers ${sMin}-${sMax}m — strong overlap` };
-      return { score: 12, label: 'Good elevation', detail: `Partial overlap with preferred elevation range` };
+      if (coverage >= 0.5) return { score: max, max, label: 'Ideal elevation', detail: `Region spans ${rMin}-${rMax}m, species prefers ${sMin}-${sMax}m — strong overlap` };
+      return { score: Math.round(max * 0.8), max, label: 'Good elevation', detail: `Partial overlap with preferred elevation range` };
     }
-    return { score: 8, label: 'Edge of range', detail: `Some elevation overlap but typical elevation is marginal` };
+    return { score: Math.round(max * 0.53), max, label: 'Edge of range', detail: `Some elevation overlap but typical elevation is marginal` };
   }
-  return { score: 0, label: 'Wrong elevation', detail: `Region (${rMin}-${rMax}m) outside species range (${sMin}-${sMax}m)` };
+  return { score: 0, max, label: 'Wrong elevation', detail: `Region (${rMin}-${rMax}m) outside species range (${sMin}-${sMax}m)` };
 }
 
 function scorePrecipitation(species, region, month) {
+  const max = getMaxForFactor('precipitation');
   const ecology = SPECIES_ECOLOGY[species.id];
-  if (!ecology) return { score: 5, label: 'Unknown', detail: '' };
+  if (!ecology) return { score: Math.round(max * 0.5), max, label: 'Unknown', detail: '' };
 
   const monthPrecip = region.monthlyPrecip[month - 1] || 0;
   const prevMonthPrecip = region.monthlyPrecip[(month - 2 + 12) % 12] || 0;
@@ -97,15 +122,16 @@ function scorePrecipitation(species, region, month) {
   const optimal = ecology.optimalPrecipMonth;
   const ratio = effectivePrecip / optimal;
 
-  if (ratio >= 0.7 && ratio <= 2.0) return { score: 10, label: 'Good moisture', detail: `~${Math.round(effectivePrecip)}mm effective rainfall — adequate for fruiting` };
-  if (ratio >= 0.4 && ratio < 0.7) return { score: 6, label: 'Moderate moisture', detail: `~${Math.round(effectivePrecip)}mm — may limit fruiting` };
-  if (ratio > 2.0) return { score: 7, label: 'Very wet', detail: `~${Math.round(effectivePrecip)}mm — saturated conditions` };
-  return { score: 2, label: 'Too dry', detail: `~${Math.round(effectivePrecip)}mm — insufficient moisture for fruiting` };
+  if (ratio >= 0.7 && ratio <= 2.0) return { score: max, max, label: 'Good moisture', detail: `~${Math.round(effectivePrecip)}mm effective rainfall — adequate for fruiting` };
+  if (ratio >= 0.4 && ratio < 0.7) return { score: Math.round(max * 0.6), max, label: 'Moderate moisture', detail: `~${Math.round(effectivePrecip)}mm — may limit fruiting` };
+  if (ratio > 2.0) return { score: Math.round(max * 0.7), max, label: 'Very wet', detail: `~${Math.round(effectivePrecip)}mm — saturated conditions` };
+  return { score: Math.round(max * 0.2), max, label: 'Too dry', detail: `~${Math.round(effectivePrecip)}mm — insufficient moisture for fruiting` };
 }
 
 function scoreTemperature(species, region, month) {
+  const maxPts = getMaxForFactor('temperature');
   const ecology = SPECIES_ECOLOGY[species.id];
-  if (!ecology?.tempRange) return { score: 5, label: 'Unknown', detail: '' };
+  if (!ecology?.tempRange) return { score: Math.round(maxPts * 0.5), max: maxPts, label: 'Unknown', detail: '' };
 
   const temp = region.monthlyTemp[month - 1];
   const { min, max, optimal } = ecology.tempRange;
@@ -114,13 +140,13 @@ function scoreTemperature(species, region, month) {
     const dist = Math.abs(temp - optimal);
     const range = max - min;
     const closeness = 1 - (dist / range);
-    if (closeness >= 0.6) return { score: 10, label: 'Ideal temperature', detail: `~${temp}°C — near optimal ${optimal}°C` };
-    return { score: 7, label: 'Suitable temperature', detail: `~${temp}°C — within fruiting range (${min}-${max}°C)` };
+    if (closeness >= 0.6) return { score: maxPts, max: maxPts, label: 'Ideal temperature', detail: `~${temp}°C — near optimal ${optimal}°C` };
+    return { score: Math.round(maxPts * 0.7), max: maxPts, label: 'Suitable temperature', detail: `~${temp}°C — within fruiting range (${min}-${max}°C)` };
   }
 
   const distOutside = temp < min ? min - temp : temp - max;
-  if (distOutside <= 3) return { score: 3, label: 'Marginal temperature', detail: `~${temp}°C — just outside preferred range` };
-  return { score: 0, label: 'Too ' + (temp < min ? 'cold' : 'warm'), detail: `~${temp}°C — well outside range (${min}-${max}°C)` };
+  if (distOutside <= 3) return { score: Math.round(maxPts * 0.3), max: maxPts, label: 'Marginal temperature', detail: `~${temp}°C — just outside preferred range` };
+  return { score: 0, max: maxPts, label: 'Too ' + (temp < min ? 'cold' : 'warm'), detail: `~${temp}°C — well outside range (${min}-${max}°C)` };
 }
 
 function scoreHistorical(species, region) {
@@ -152,19 +178,27 @@ function generatePrediction(species, region, month) {
   const totalScore = seasonScore.score + habitatScore.score + elevationScore.score +
     precipScore.score + tempScore.score + historicalScore.score;
 
+  const maxScore = (seasonScore.max || getMaxForFactor('season')) +
+    (habitatScore.max || getMaxForFactor('habitat')) +
+    (elevationScore.max || getMaxForFactor('elevation')) +
+    (precipScore.max || getMaxForFactor('precipitation')) +
+    (tempScore.max || getMaxForFactor('temperature')) + 10;
+
   const ecology = SPECIES_ECOLOGY[species.id] || {};
 
+  const pct = totalScore / maxScore;
   let confidence = 'low';
-  if (totalScore >= 75) confidence = 'very-high';
-  else if (totalScore >= 55) confidence = 'high';
-  else if (totalScore >= 40) confidence = 'moderate';
+  if (pct >= 0.68) confidence = 'very-high';
+  else if (pct >= 0.50) confidence = 'high';
+  else if (pct >= 0.36) confidence = 'moderate';
 
   return {
     speciesId: species.id,
     regionId: region.id,
     score: totalScore,
-    maxScore: 110,
+    maxScore,
     confidence,
+    calibrated: !!calibratedWeights,
     factors: {
       season: seasonScore,
       habitat: habitatScore,
@@ -233,4 +267,4 @@ function getRegionsGeoJSON() {
   };
 }
 
-export { getPredictions, getRegionPredictions, getSpeciesPredictions, getTopPicks, getRegionsGeoJSON };
+export { getPredictions, getRegionPredictions, getSpeciesPredictions, getTopPicks, getRegionsGeoJSON, setCalibration, getCalibration };

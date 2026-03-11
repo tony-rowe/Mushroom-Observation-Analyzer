@@ -1,20 +1,26 @@
 import express from 'express';
 import cors from 'cors';
+import https from 'https';
+import http from 'http';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { initDb, getObservationStats, getGlobalStats, getHeatmapData, getObservationsForTaxon, getAllObservations } from './cache.js';
 import { syncSpecies, fetchTaxonDetails } from './api.js';
 import { PNW_SPECIES, PNW_PLACE_IDS } from './species.js';
-import { getTopPicks, getSpeciesPredictions, getRegionPredictions, getRegionsGeoJSON } from './predictions.js';
+import { getTopPicks, getSpeciesPredictions, getRegionPredictions, getRegionsGeoJSON, setCalibration, getCalibration } from './predictions.js';
+import { runBacktest } from './backtest.js';
+import { loadCerts } from './ssl.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PORT = process.env.API_PORT || 3001;
+const HTTPS_PORT = process.env.HTTPS_PORT || 3443;
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 
 const syncProgress = new Map();
+let lastBacktestResult = null;
 
 app.get('/api/species', (_req, res) => {
   res.json({ species: PNW_SPECIES, placeIds: PNW_PLACE_IDS });
@@ -111,7 +117,7 @@ app.get('/api/predictions', (req, res) => {
     const month = parseInt(req.query.month) || (new Date().getMonth() + 1);
     const limit = parseInt(req.query.limit) || 15;
     const topPicks = getTopPicks(month, limit);
-    res.json({ month, topPicks });
+    res.json({ month, calibrated: !!getCalibration(), topPicks });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -121,7 +127,7 @@ app.get('/api/predictions/species/:id', (req, res) => {
   try {
     const month = parseInt(req.query.month) || (new Date().getMonth() + 1);
     const predictions = getSpeciesPredictions(req.params.id, month);
-    res.json({ month, speciesId: req.params.id, predictions });
+    res.json({ month, speciesId: req.params.id, calibrated: !!getCalibration(), predictions });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -131,7 +137,7 @@ app.get('/api/predictions/region/:id', (req, res) => {
   try {
     const month = parseInt(req.query.month) || (new Date().getMonth() + 1);
     const predictions = getRegionPredictions(req.params.id, month);
-    res.json({ month, regionId: req.params.id, predictions });
+    res.json({ month, regionId: req.params.id, calibrated: !!getCalibration(), predictions });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -161,13 +167,40 @@ app.get('/api/observations', (req, res) => {
   }
 });
 
+app.post('/api/backtest', (_req, res) => {
+  try {
+    const result = runBacktest();
+    setCalibration(result);
+    lastBacktestResult = result;
+    res.json({ status: 'ok', calibration: result });
+  } catch (err) {
+    console.error('Backtest error:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.get('/api/backtest', (_req, res) => {
+  res.json({ calibration: lastBacktestResult, calibrated: !!getCalibration() });
+});
+
 async function start() {
   await initDb();
   console.log('Database initialized.');
 
   app.listen(PORT, () => {
-    console.log(`API server running on http://localhost:${PORT}`);
+    console.log(`HTTP API server running on http://localhost:${PORT}`);
   });
+
+  const certs = loadCerts();
+  if (certs) {
+    try {
+      https.createServer({ key: certs.key, cert: certs.cert }, app).listen(HTTPS_PORT, () => {
+        console.log(`HTTPS API server running on https://localhost:${HTTPS_PORT} (${certs.source})`);
+      });
+    } catch (err) {
+      console.error('Failed to start HTTPS server:', err.message);
+    }
+  }
 
   console.log('Starting background sync of all species...');
   for (const species of PNW_SPECIES) {
@@ -186,6 +219,15 @@ async function start() {
     }
   }
   console.log('Initial sync complete.');
+
+  console.log('\nRunning prediction backtest and calibration...');
+  try {
+    lastBacktestResult = runBacktest();
+    setCalibration(lastBacktestResult);
+    console.log('Prediction engine calibrated from observation data.\n');
+  } catch (err) {
+    console.error('Backtest failed (using default weights):', err.message);
+  }
 }
 
 start().catch(err => {
