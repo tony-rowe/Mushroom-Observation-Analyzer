@@ -13,7 +13,7 @@ import { loadCerts } from './ssl.js';
 import { ALL_SPECIES, CATEGORIES } from './all-species.js';
 import { getSpeciesPhotos, getQuizPhotos } from './photos.js';
 import { importByTaxonId, getAllActiveSpecies, ensureImportTable, getImportedSpecies, deleteImportedSpecies } from './import.js';
-import { ensurePhotoTable, bulkSyncAllPhotos, getAllPhotoStats, syncPhotosForSpecies } from './photo-sync.js';
+import { ensurePhotoTable, bulkSyncAllPhotos, getAllPhotoStats, syncPhotosForSpecies, trimAllPhotos } from './photo-sync.js';
 import { fetchFirePerimeters, getAvailableYears, getFireSummary } from './fires.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -381,7 +381,11 @@ async function start() {
   }
   console.log('Initial sync complete.');
 
-  console.log('\nStarting bulk photo sync (background)...');
+  console.log('\nTrimming photos to 50 per species...');
+  const afterTrim = trimAllPhotos(allSpecies);
+  console.log(`  Photos after trim: ${afterTrim.toLocaleString()}`);
+
+  console.log('\nStarting bulk photo sync (background, max 50/species)...');
   bulkSyncAllPhotos(allSpecies).then(result => {
     console.log(`\n📸 Photo sync complete: ${result.totalPhotos.toLocaleString()} total photos across ${result.speciesSynced} species\n`);
   }).catch(err => console.error('Photo sync error:', err));

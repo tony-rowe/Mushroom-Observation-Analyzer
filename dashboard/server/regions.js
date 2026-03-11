@@ -646,6 +646,182 @@ const SPECIES_ECOLOGY = {
     soilPreference: ['loam', 'well_drained'],
     tips: 'Native hazelnut in beaked husks. Smaller than commercial but great flavor. Harvest in fall before squirrels get them.',
     accessTip: 'Forest edges and streambanks. Willamette Valley and Coast Range foothills.'
+  },
+  'meadow-mushroom': {
+    preferredForests: [],
+    elevationRange: { min: 0, max: 800 },
+    optimalPrecipMonth: 60, tempRange: { min: 8, max: 20, optimal: 14 },
+    soilPreference: ['grass', 'pasture', 'lawn'],
+    tips: 'Grows in grass ONLY — never in forests. Pink gills aging to chocolate-brown. ALWAYS check for volva to rule out Amanita.',
+    accessTip: 'Pastures, horse fields, lawns after fall rains. Willamette Valley.'
+  },
+  'blewit': {
+    preferredForests: ['bigleaf_maple', 'oregon_oak', 'red_alder'],
+    elevationRange: { min: 0, max: 600 },
+    optimalPrecipMonth: 100, tempRange: { min: 3, max: 14, optimal: 8 },
+    soilPreference: ['leaf_litter', 'compost', 'organic'],
+    tips: 'Late fall mushroom in deep leaf litter. Violet-purple all over when young. ALWAYS check spore print (pale pink, not rusty).',
+    accessTip: 'Under deciduous trees with deep leaf litter. Gardens and compost piles.'
+  },
+  'cascade-chanterelle': {
+    preferredForests: ['douglas_fir', 'noble_fir', 'mountain_hemlock', 'engelmann_spruce'],
+    elevationRange: { min: 500, max: 1500 },
+    optimalPrecipMonth: 150, tempRange: { min: 5, max: 16, optimal: 10 },
+    soilPreference: ['volcanic', 'loam', 'well_drained'],
+    tips: 'Cascade-endemic chanterelle. Similar to golden chanterelle but found at higher elevations in the Cascades.',
+    accessTip: 'Mid-elevation Cascade forests. Willamette NF, Mt. Hood NF.'
+  },
+  'common-puffball': {
+    preferredForests: ['douglas_fir', 'western_hemlock', 'bigleaf_maple'],
+    elevationRange: { min: 0, max: 1200 },
+    optimalPrecipMonth: 60, tempRange: { min: 5, max: 18, optimal: 12 },
+    soilPreference: ['organic', 'loam', 'forest_floor'],
+    tips: 'Small round puffballs on forest floor. ALWAYS slice in half — must be pure white inside with no mushroom outline.',
+    accessTip: 'Trail edges and forest floor throughout PNW forests.'
+  },
+  'conifer-chicken': {
+    preferredForests: ['douglas_fir', 'western_hemlock', 'sitka_spruce'],
+    elevationRange: { min: 0, max: 1200 },
+    optimalPrecipMonth: 50, tempRange: { min: 10, max: 25, optimal: 18 },
+    soilPreference: [],
+    tips: 'Bright orange shelves on conifer wood. Some people react — try small amount first. Harvest young tender edges.',
+    accessTip: 'Dead and dying conifers in any PNW forest.'
+  },
+  'honey-mushroom': {
+    preferredForests: ['douglas_fir', 'western_hemlock', 'red_alder', 'bigleaf_maple'],
+    elevationRange: { min: 0, max: 1200 },
+    optimalPrecipMonth: 80, tempRange: { min: 5, max: 16, optimal: 10 },
+    soilPreference: ['organic', 'loam'],
+    tips: 'Dense clusters at tree bases in fall. MUST cook thoroughly. Check spore print (white, NOT rusty brown).',
+    accessTip: 'Base of trees throughout PNW forests. Very common.'
+  },
+  'painted-suillus': {
+    preferredForests: ['douglas_fir'],
+    elevationRange: { min: 0, max: 1200 },
+    optimalPrecipMonth: 80, tempRange: { min: 5, max: 18, optimal: 12 },
+    soilPreference: ['loam', 'well_drained'],
+    tips: 'Always under Douglas fir — obligate mycorrhizal partner. Remove slimy cap skin before cooking.',
+    accessTip: 'Any Douglas fir forest in the PNW.'
+  },
+  'saskatoon-berry': {
+    preferredForests: ['douglas_fir', 'ponderosa_pine', 'oregon_oak'],
+    elevationRange: { min: 100, max: 1500 },
+    optimalPrecipMonth: 30, tempRange: { min: 10, max: 28, optimal: 20 },
+    soilPreference: ['well_drained', 'rocky', 'loam'],
+    tips: 'Similar to blueberries. Ripe when dark purple and easily detached. Crown on bottom of berry. Excellent fresh or dried.',
+    accessTip: 'Forest edges and open slopes. Eastern Cascades and Rogue Valley.'
+  },
+  'black-cap-raspberry': {
+    preferredForests: ['douglas_fir', 'red_alder', 'bigleaf_maple'],
+    elevationRange: { min: 0, max: 1000 },
+    optimalPrecipMonth: 30, tempRange: { min: 14, max: 30, optimal: 22 },
+    soilPreference: ['well_drained', 'sandy', 'loam'],
+    tips: 'Native black raspberry. Berries pull off leaving hollow cup (unlike blackberry). Intensely flavored.',
+    accessTip: 'Forest edges, clearings, roadsides. Willamette Valley and Coast Range.'
+  },
+  'cascade-blueberry': {
+    preferredForests: ['mountain_hemlock', 'pacific_silver_fir', 'noble_fir'],
+    elevationRange: { min: 1200, max: 2000 },
+    optimalPrecipMonth: 40, tempRange: { min: 8, max: 22, optimal: 16 },
+    soilPreference: ['volcanic', 'acidic', 'sandy'],
+    tips: 'Alpine blueberry. Small but incredibly sweet. Found above timberline in mountain meadows.',
+    accessTip: 'Subalpine meadows at 4000-6000ft. Mt. Hood, Mt. Jefferson, Three Sisters areas.'
+  },
+  'wild-gooseberry': {
+    preferredForests: ['douglas_fir', 'bigleaf_maple', 'red_alder', 'western_red_cedar'],
+    elevationRange: { min: 0, max: 800 },
+    optimalPrecipMonth: 50, tempRange: { min: 10, max: 24, optimal: 16 },
+    soilPreference: ['moist', 'loam', 'organic'],
+    tips: 'Thorny shrub with tart translucent berries. Great for pies and jams.',
+    accessTip: 'Forest understory and streambanks.'
+  },
+  'kinnikinnick': {
+    preferredForests: ['ponderosa_pine', 'lodgepole_pine', 'shore_pine', 'douglas_fir'],
+    elevationRange: { min: 0, max: 1500 },
+    optimalPrecipMonth: 20, tempRange: { min: 5, max: 25, optimal: 15 },
+    soilPreference: ['sandy', 'rocky', 'acidic'],
+    tips: 'Low mat-forming groundcover. Red berries are bland raw but can be cooked into sauce.',
+    accessTip: 'Sandy/rocky areas. Coastal dunes, open pine forests, rocky outcrops.'
+  },
+  'black-hawthorn': {
+    preferredForests: ['oregon_oak', 'douglas_fir', 'red_alder', 'bigleaf_maple'],
+    elevationRange: { min: 0, max: 800 },
+    optimalPrecipMonth: 30, tempRange: { min: 10, max: 28, optimal: 18 },
+    soilPreference: ['loam', 'moist', 'alluvial'],
+    tips: 'Small dark berries (haws) rich in pectin. Excellent for jelly.',
+    accessTip: 'Streambanks and forest edges.'
+  },
+  'nodding-onion': {
+    preferredForests: ['ponderosa_pine', 'oregon_oak', 'douglas_fir'],
+    elevationRange: { min: 100, max: 1500 },
+    optimalPrecipMonth: 25, tempRange: { min: 8, max: 28, optimal: 18 },
+    soilPreference: ['rocky', 'well_drained', 'meadow'],
+    tips: 'ALWAYS smell — must smell like onion. Death camas looks similar but has NO onion smell. Bulbs, leaves, flowers all edible.',
+    accessTip: 'Rocky meadows and open slopes. Eastern Cascades, Rogue Valley.'
+  },
+  'curled-dock': {
+    preferredForests: [],
+    elevationRange: { min: 0, max: 1000 },
+    optimalPrecipMonth: 30, tempRange: { min: 5, max: 25, optimal: 14 },
+    soilPreference: ['any', 'disturbed', 'rich'],
+    tips: 'Lemony young leaves in spring for salads. Seeds can be ground into flour. Very common weed.',
+    accessTip: 'Everywhere — fields, roadsides, disturbed areas.'
+  },
+  'plantain': {
+    preferredForests: [],
+    elevationRange: { min: 0, max: 800 },
+    optimalPrecipMonth: 30, tempRange: { min: 5, max: 25, optimal: 15 },
+    soilPreference: ['compacted', 'disturbed', 'lawn', 'path'],
+    tips: 'Young leaves for salads. Also a famous wound herb — chew leaf and apply to stings/cuts.',
+    accessTip: 'Paths, lawns, disturbed compacted soils. Impossible to miss.'
+  },
+  'violet': {
+    preferredForests: ['douglas_fir', 'bigleaf_maple', 'red_alder'],
+    elevationRange: { min: 0, max: 1200 },
+    optimalPrecipMonth: 50, tempRange: { min: 5, max: 20, optimal: 12 },
+    soilPreference: ['moist', 'organic', 'loam'],
+    tips: 'Flowers for salads, candied garnish, or violet syrup. Leaves for tea. All parts edible.',
+    accessTip: 'Forest edges, meadows, and open woodlands.'
+  },
+  'rockweed': {
+    preferredForests: [],
+    elevationRange: { min: 0, max: 0 },
+    optimalPrecipMonth: 0, tempRange: { min: 5, max: 18, optimal: 12 },
+    soilPreference: ['intertidal', 'rocky'],
+    tips: 'Traditional seaweed for steaming seafood (clambake). Also dried for seasoning.',
+    accessTip: 'Mid-intertidal rocks along the Oregon coast.'
+  },
+  'coho-salmon': {
+    preferredForests: [],
+    elevationRange: { min: 0, max: 300 },
+    optimalPrecipMonth: 80, tempRange: { min: 5, max: 16, optimal: 10 },
+    soilPreference: ['river', 'stream'],
+    tips: 'Fall silver salmon. Check ODFW for open rivers and hatchery vs wild regulations.',
+    accessTip: 'Coastal rivers: Clackamas, Sandy, Wilson, Nestucca, Coos. Also Columbia tributaries.'
+  },
+  'sockeye-salmon': {
+    preferredForests: [],
+    elevationRange: { min: 0, max: 500 },
+    optimalPrecipMonth: 40, tempRange: { min: 5, max: 18, optimal: 12 },
+    soilPreference: ['river', 'lake'],
+    tips: 'Limited runs in Oregon. Reddest flesh of any salmon. Check ODFW — runs vary greatly by year.',
+    accessTip: 'Very limited Oregon runs. Some years available on upper Columbia.'
+  },
+  'geoduck': {
+    preferredForests: [],
+    elevationRange: { min: 0, max: 0 },
+    optimalPrecipMonth: 0, tempRange: { min: 5, max: 16, optimal: 10 },
+    soilPreference: ['sandy_mud', 'bay', 'subtidal'],
+    tips: 'Enormous clam. Requires very low tides. Siphon extends 3 feet. Sweet, crunchy sashimi.',
+    accessTip: 'Sandy bays at extreme low tides. Coos Bay, Tillamook Bay.'
+  },
+  'california-mussel': {
+    preferredForests: [],
+    elevationRange: { min: 0, max: 0 },
+    optimalPrecipMonth: 0, tempRange: { min: 5, max: 16, optimal: 10 },
+    soilPreference: ['rocky_coast', 'surf_zone'],
+    tips: 'Harvest in winter (R months rule). ALWAYS check ODFW for red tide/biotoxin closures. Rich briny flavor.',
+    accessTip: 'Wave-exposed rocky headlands along Oregon coast. Cape Perpetua, Otter Rock.'
   }
 };
 

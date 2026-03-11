@@ -430,6 +430,240 @@ const ALL_SPECIES = [
     idTips: 'Shrub with double-toothed round leaves. Nuts enclosed in long beaked husks (like a green tube). Catkins in early spring.',
     lookalikes: [],
     foragerScore: { identification: 4, abundance: 3, culinaryValue: 4, safetyRisk: 1, seasonLength: 2, preservation: 5 }
+  },
+
+  // ═══════════════════════ ADDITIONAL FUNGI ═══════════════════════
+  {
+    id: 'meadow-mushroom', taxonId: 143563, category: 'fungi',
+    scientificName: 'Agaricus campestris', commonName: 'Meadow Mushroom',
+    description: 'The wild ancestor of the grocery-store button mushroom. Found in pastures and lawns after rain. Excellent mild flavor.',
+    season: { start: 9, end: 11, peak: [10] }, emoji: '🍄', color: '#D4D4D4',
+    habitat: 'Pastures, lawns, meadows — never in forests', edibility: 'Choice edible',
+    idTips: 'White cap, pink gills aging to brown, ring on stem, NO volva at base. Grows in grass, not wood. Smells pleasant.',
+    lookalikes: [{ name: 'Destroying Angel (Amanita ocreata)', danger: 'deadly', tip: 'Amanita has WHITE gills, a volva (cup) at base, and grows near trees. ALWAYS check for volva.' }],
+    foragerScore: { identification: 3, abundance: 3, culinaryValue: 4, safetyRisk: 4, seasonLength: 2, preservation: 3 }
+  },
+  {
+    id: 'blewit', taxonId: 1525548, category: 'fungi',
+    scientificName: 'Collybia nuda', commonName: 'Blewit',
+    description: 'Beautiful violet-purple mushroom found in leaf litter in fall. Nutty, mild flavor. Must cook thoroughly.',
+    season: { start: 10, end: 12, peak: [11] }, emoji: '💜', color: '#8B5CF6',
+    habitat: 'Leaf litter, compost, garden edges', edibility: 'Good edible (must cook)',
+    idTips: 'Purple-lilac cap, stem, and gills when young, fading brownish. Spore print pale pink. Found in leaf piles.',
+    lookalikes: [{ name: 'Cortinarius species', danger: 'toxic/deadly', tip: 'Cortinarius has rusty-brown spore print and cobwebby veil. ALWAYS check spore print.' }],
+    foragerScore: { identification: 3, abundance: 3, culinaryValue: 4, safetyRisk: 3, seasonLength: 2, preservation: 3 }
+  },
+  {
+    id: 'cascade-chanterelle', taxonId: 427379, category: 'fungi',
+    scientificName: 'Cantharellus cascadensis', commonName: 'Cascade Chanterelle',
+    description: 'A recently described chanterelle species endemic to the Cascade Range. Similar to golden chanterelle but with distinct DNA.',
+    season: { start: 9, end: 12, peak: [10, 11] }, emoji: '🍄', color: '#D97706',
+    habitat: 'Cascade Range coniferous forests, especially with spruce', edibility: 'Choice edible',
+    idTips: 'Similar to Pacific Golden Chanterelle. Found specifically in the Cascades. False gills, fruity scent.',
+    lookalikes: [],
+    foragerScore: { identification: 4, abundance: 3, culinaryValue: 5, safetyRisk: 2, seasonLength: 3, preservation: 4 }
+  },
+  {
+    id: 'common-puffball', taxonId: 48443, category: 'fungi',
+    scientificName: 'Lycoperdon perlatum', commonName: 'Common Puffball',
+    description: 'Small, round, studded with tiny spines. Edible when flesh is pure white inside. Found everywhere in forests.',
+    season: { start: 8, end: 11, peak: [9, 10] }, emoji: '⚪', color: '#E5E7EB',
+    habitat: 'Forest floor, trail edges, rotting wood', edibility: 'Good edible (when white inside)',
+    idTips: 'Round, 2-5cm, covered in tiny spines/warts. CUT IN HALF — interior must be pure white, no outline of a mushroom shape.',
+    lookalikes: [{ name: 'Young Amanita (egg stage)', danger: 'deadly', tip: 'Slice in half — if you see the outline of a mushroom forming inside, it is a deadly Amanita egg, NOT a puffball.' }],
+    foragerScore: { identification: 4, abundance: 5, culinaryValue: 2, safetyRisk: 3, seasonLength: 3, preservation: 2 }
+  },
+  {
+    id: 'conifer-chicken', taxonId: 118057, category: 'fungi',
+    scientificName: 'Laetiporus conifericola', commonName: 'Conifer Chicken of the Woods',
+    description: 'The PNW version of chicken of the woods that grows specifically on conifers. Some people have GI sensitivity — try small amounts first.',
+    season: { start: 5, end: 11, peak: [8, 9, 10] }, emoji: '🐔', color: '#EA580C',
+    habitat: 'Dead or living conifers — Douglas fir, hemlock, spruce', edibility: 'Good edible (caution on conifers)',
+    idTips: 'Bright orange shelves with yellow edges on conifer wood. Some people react to the conifer version — try a small amount first.',
+    lookalikes: [],
+    foragerScore: { identification: 5, abundance: 3, culinaryValue: 3, safetyRisk: 2, seasonLength: 4, preservation: 3 }
+  },
+  {
+    id: 'honey-mushroom', taxonId: 192381, category: 'fungi',
+    scientificName: 'Armillaria ostoyae', commonName: 'Honey Mushroom',
+    description: 'One of the largest organisms on earth — a single specimen in Oregon covers 2,385 acres. Dense clusters at tree bases. Must cook well.',
+    season: { start: 9, end: 11, peak: [10] }, emoji: '🍯', color: '#D97706',
+    habitat: 'Base of trees and stumps, both living and dead', edibility: 'Good edible (must cook thoroughly)',
+    idTips: 'Honey-brown cap, white spore print, ring on stem, grows in dense clusters at tree bases. Black "bootlace" rhizomorphs under bark.',
+    lookalikes: [{ name: 'Galerina marginata', danger: 'deadly', tip: 'Galerina has rust-brown spore print and grows on wood in small groups. ALWAYS check spore print.' }],
+    foragerScore: { identification: 3, abundance: 4, culinaryValue: 3, safetyRisk: 4, seasonLength: 2, preservation: 3 }
+  },
+  {
+    id: 'painted-suillus', taxonId: 118159, category: 'fungi',
+    scientificName: 'Suillus lakei', commonName: 'Western Painted Suillus',
+    description: 'Colorful bolete found under Douglas fir. Red-brown scales on a yellow cap. Slimy when wet. Remove cap skin before cooking.',
+    season: { start: 9, end: 11, peak: [10] }, emoji: '🎨', color: '#B45309',
+    habitat: 'Under Douglas fir specifically — mycorrhizal partner', edibility: 'Good edible',
+    idTips: 'Red-brown scaly cap, yellow pores underneath, slimy. Ring on stem. Always under Douglas fir.',
+    lookalikes: [],
+    foragerScore: { identification: 4, abundance: 4, culinaryValue: 3, safetyRisk: 1, seasonLength: 2, preservation: 3 }
+  },
+
+  // ═══════════════════════ ADDITIONAL BERRIES ═══════════════════════
+  {
+    id: 'saskatoon-berry', taxonId: 75415, category: 'berry',
+    scientificName: 'Amelanchier alnifolia', commonName: 'Saskatoon (Serviceberry)',
+    description: 'Sweet purple berries similar to blueberries. One of the most important traditional food plants of Pacific Northwest peoples.',
+    season: { start: 6, end: 8, peak: [7] }, emoji: '🫐', color: '#6D28D9',
+    habitat: 'Forest edges, open slopes, streambanks', edibility: 'Choice edible',
+    idTips: 'Shrub/small tree with round leaves. White 5-petaled flowers in spring. Dark purple berry clusters with prominent crown on bottom.',
+    lookalikes: [],
+    foragerScore: { identification: 4, abundance: 3, culinaryValue: 5, safetyRisk: 1, seasonLength: 2, preservation: 5 }
+  },
+  {
+    id: 'black-cap-raspberry', taxonId: 63960, category: 'berry',
+    scientificName: 'Rubus leucodermis', commonName: 'Black Cap Raspberry',
+    description: "PNW native black raspberry. Sweet-tart flavor, intensely aromatic. The berries detach cleanly from the white core like a cup.",
+    season: { start: 6, end: 8, peak: [7] }, emoji: '⚫', color: '#1E1B4B',
+    habitat: 'Forest edges, clearings, burns, roadsides', edibility: 'Choice edible',
+    idTips: 'Canes with whitish bloom and hooked thorns. Berries dark purple-black, pull off leaving white core. Trifoliate leaves, white undersides.',
+    lookalikes: [],
+    foragerScore: { identification: 4, abundance: 3, culinaryValue: 5, safetyRisk: 1, seasonLength: 2, preservation: 4 }
+  },
+  {
+    id: 'cascade-blueberry', taxonId: 48348, category: 'berry',
+    scientificName: 'Vaccinium deliciosum', commonName: 'Cascade Blueberry',
+    description: 'The finest wild blueberry in the PNW. Sweet, complex flavor. Found in subalpine meadows — worth the hike.',
+    season: { start: 7, end: 9, peak: [8] }, emoji: '🫐', color: '#4338CA',
+    habitat: 'Subalpine meadows, 4000-6000ft, open ridges', edibility: 'Choice edible',
+    idTips: 'Low shrub in alpine meadows. Round blue berries with bloom. Tiny oval leaves turning red in fall. Found above timberline.',
+    lookalikes: [],
+    foragerScore: { identification: 4, abundance: 3, culinaryValue: 5, safetyRisk: 1, seasonLength: 2, preservation: 5 }
+  },
+  {
+    id: 'wild-gooseberry', taxonId: 53448, category: 'berry',
+    scientificName: 'Ribes divaricatum', commonName: 'Wild Gooseberry',
+    description: 'Tart, translucent berries on a thorny shrub. Excellent for jams, pies, and sauces. Found throughout PNW forests.',
+    season: { start: 6, end: 8, peak: [7] }, emoji: '🟢', color: '#65A30D',
+    habitat: 'Forest understory, streambanks, moist woods', edibility: 'Good edible (tart)',
+    idTips: 'Thorny shrub with maple-like lobed leaves. Small bell-shaped flowers. Translucent green-purple berries with stripes.',
+    lookalikes: [],
+    foragerScore: { identification: 4, abundance: 3, culinaryValue: 3, safetyRisk: 1, seasonLength: 2, preservation: 4 }
+  },
+  {
+    id: 'kinnikinnick', taxonId: 68049, category: 'berry',
+    scientificName: 'Arctostaphylos uva-ursi', commonName: 'Kinnikinnick (Bearberry)',
+    description: 'Low-growing groundcover with mealy red berries. Bland raw but important traditional food when cooked. Widespread.',
+    season: { start: 8, end: 11, peak: [9, 10] }, emoji: '🔴', color: '#DC2626',
+    habitat: 'Sandy, rocky areas, open conifer forests, coastal dunes', edibility: 'Edible (bland — best cooked)',
+    idTips: 'Low mat-forming evergreen shrub. Small leathery oval leaves. Pink bell flowers. Bright red round berries.',
+    lookalikes: [],
+    foragerScore: { identification: 5, abundance: 4, culinaryValue: 1, safetyRisk: 1, seasonLength: 3, preservation: 3 }
+  },
+  {
+    id: 'black-hawthorn', taxonId: 76469, category: 'berry',
+    scientificName: 'Crataegus douglasii', commonName: 'Black Hawthorn',
+    description: 'Small tree with dark purple-black berries (haws) in fall. Makes excellent jelly and is rich in pectin. Thorny branches.',
+    season: { start: 8, end: 10, peak: [9] }, emoji: '🫐', color: '#4C1D95',
+    habitat: 'Streambanks, forest edges, open woodlands', edibility: 'Good edible',
+    idTips: 'Small thorny tree. Clusters of white flowers in spring. Small dark berries in clusters. Lobed leaves.',
+    lookalikes: [],
+    foragerScore: { identification: 4, abundance: 3, culinaryValue: 3, safetyRisk: 1, seasonLength: 2, preservation: 5 }
+  },
+
+  // ═══════════════════════ ADDITIONAL PLANTS ═══════════════════════
+  {
+    id: 'nodding-onion', taxonId: 116364, category: 'plant',
+    scientificName: 'Allium cernuum', commonName: 'Nodding Wild Onion',
+    description: 'Native wild onion with a distinctive nodding flower head. Mild onion/garlic flavor. Bulbs, leaves, and flowers are all edible.',
+    season: { start: 4, end: 9, peak: [5, 6] }, emoji: '🧅', color: '#A855F7',
+    habitat: 'Rocky slopes, meadows, open forests', edibility: 'Good edible (all parts)',
+    idTips: 'Grass-like leaves, distinctive drooping pink-purple flower cluster. Smells like onion when crushed. Bulb at base.',
+    lookalikes: [{ name: 'Death Camas (Zigadenus)', danger: 'deadly', tip: 'Death camas has NO onion smell. ALWAYS crush and smell — if no onion scent, do NOT eat.' }],
+    foragerScore: { identification: 3, abundance: 3, culinaryValue: 4, safetyRisk: 4, seasonLength: 3, preservation: 4 }
+  },
+  {
+    id: 'curled-dock', taxonId: 53197, category: 'plant',
+    scientificName: 'Rumex crispus', commonName: 'Curled Dock',
+    description: 'Ubiquitous wayside plant with lemony leaves. Young leaves for salads, older leaves cooked. Seeds can be ground for flour.',
+    season: { start: 3, end: 10, peak: [4, 5] }, emoji: '🌿', color: '#059669',
+    habitat: 'Disturbed soils, fields, roadsides, gardens', edibility: 'Good edible (young leaves)',
+    idTips: 'Wavy/curled leaf edges (hence the name). Tall spike of green/reddish seeds in summer. Large taproot.',
+    lookalikes: [],
+    foragerScore: { identification: 5, abundance: 5, culinaryValue: 2, safetyRisk: 1, seasonLength: 4, preservation: 3 }
+  },
+  {
+    id: 'plantain', taxonId: 58961, category: 'plant',
+    scientificName: 'Plantago major', commonName: 'Common Plantain',
+    description: 'The "band-aid plant." Young leaves edible in salads or cooked. Seeds used as psyllium-like fiber. Also a valuable wound herb.',
+    season: { start: 3, end: 10, peak: [4, 5, 6] }, emoji: '🌿', color: '#15803D',
+    habitat: 'Lawns, paths, compacted soils, disturbed areas', edibility: 'Good edible (young leaves)',
+    idTips: 'Rosette of broad oval leaves with parallel veins. Flower spike like a rat tail. Very common in paths and lawns.',
+    lookalikes: [],
+    foragerScore: { identification: 5, abundance: 5, culinaryValue: 2, safetyRisk: 1, seasonLength: 5, preservation: 3 }
+  },
+
+  // ═══════════════════════ ADDITIONAL FLOWERS ═══════════════════════
+  {
+    id: 'violet', taxonId: 53328, category: 'flower',
+    scientificName: 'Viola adunca', commonName: 'Early Blue Violet',
+    description: 'Delicate purple flowers that are entirely edible. Flowers for salads, candied decorations, and violet syrup. Leaves for tea.',
+    season: { start: 3, end: 6, peak: [4, 5] }, emoji: '💜', color: '#7C3AED',
+    habitat: 'Forest edges, meadows, open woodlands', edibility: 'Good edible (flowers and leaves)',
+    idTips: 'Small purple flowers with 5 petals, lower petal with dark lines (nectar guides). Heart-shaped leaves.',
+    lookalikes: [],
+    foragerScore: { identification: 4, abundance: 4, culinaryValue: 3, safetyRisk: 1, seasonLength: 3, preservation: 3 }
+  },
+
+  // ═══════════════════════ ADDITIONAL SEAWEED ═══════════════════════
+  {
+    id: 'rockweed', taxonId: 69155, category: 'seaweed',
+    scientificName: 'Fucus distichus', commonName: 'Rockweed',
+    description: 'Olive-brown forked seaweed common in the intertidal zone. Used to steam seafood (traditional clambake). Also edible dried.',
+    season: { start: 4, end: 10, peak: [6, 7, 8] }, emoji: '🌊', color: '#713F12',
+    habitat: 'Mid-intertidal rocks along the coast', edibility: 'Edible (primarily for cooking)',
+    idTips: 'Olive-brown, flat forked fronds with air bladders at tips. Attached to rocks in the intertidal zone. Very common.',
+    lookalikes: [],
+    foragerScore: { identification: 5, abundance: 5, culinaryValue: 2, safetyRisk: 1, seasonLength: 4, preservation: 4 }
+  },
+
+  // ═══════════════════════ ADDITIONAL FISH ═══════════════════════
+  {
+    id: 'coho-salmon', taxonId: 53692, category: 'fish',
+    scientificName: 'Oncorhynchus kisutch', commonName: 'Coho Salmon (Silver)',
+    description: "Silver salmon — Oregon's favorite fall fishing target. Smaller than Chinook but excellent flavor. Aggressive fighters on the line.",
+    season: { start: 8, end: 12, peak: [9, 10, 11] }, emoji: '🐟', color: '#60A5FA',
+    habitat: 'Coastal rivers and streams. Clackamas, Sandy, Wilson, Nestucca, Coos rivers', edibility: 'Choice edible',
+    idTips: 'Medium-sized salmon (8-12 lbs). Silver sides, small spots on upper tail lobe only. White gumline. Turns red in freshwater.',
+    lookalikes: [],
+    foragerScore: { identification: 3, abundance: 3, culinaryValue: 5, safetyRisk: 1, seasonLength: 3, preservation: 5 }
+  },
+  {
+    id: 'sockeye-salmon', taxonId: 69922, category: 'fish',
+    scientificName: 'Oncorhynchus nerka', commonName: 'Sockeye Salmon (Red)',
+    description: 'The reddest-fleshed salmon with firm, rich flavor. Limited runs in Oregon but prized. Turns brilliant red when spawning.',
+    season: { start: 6, end: 9, peak: [7, 8] }, emoji: '🐟', color: '#EF4444',
+    habitat: 'Select rivers with lake access. Limited Oregon runs — check ODFW', edibility: 'Choice edible',
+    idTips: 'Slim, streamlined body. No spots on back or tail. Turns bright red with green head during spawning.',
+    lookalikes: [],
+    foragerScore: { identification: 3, abundance: 1, culinaryValue: 5, safetyRisk: 1, seasonLength: 2, preservation: 5 }
+  },
+
+  // ═══════════════════════ ADDITIONAL MARINE ═══════════════════════
+  {
+    id: 'geoduck', taxonId: 117618, category: 'marine',
+    scientificName: 'Panopea generosa', commonName: 'Pacific Geoduck',
+    description: "The world's largest burrowing clam. Incredibly long siphon. Sweet, crunchy meat prized in sushi (mirugai). Lives 100+ years.",
+    season: { start: 1, end: 12, peak: [4, 5, 6] }, emoji: '🐚', color: '#A3A3A3',
+    habitat: 'Sandy/muddy bays, subtidal to low intertidal. Requires very low tides.', edibility: 'Choice edible',
+    idTips: 'Enormous siphon sticking out of sand (up to 3 feet). Shell is small relative to body. Dig DEEP.',
+    lookalikes: [],
+    foragerScore: { identification: 5, abundance: 2, culinaryValue: 5, safetyRisk: 1, seasonLength: 5, preservation: 3 }
+  },
+  {
+    id: 'california-mussel', taxonId: 62806, category: 'marine',
+    scientificName: 'Mytilus californianus', commonName: 'California Mussel',
+    description: 'Large mussels attached to wave-battered rocks. Rich, briny flavor. Check ODFW for red tide/quarantine closures before harvesting.',
+    season: { start: 11, end: 4, peak: [12, 1, 2] }, emoji: '🦪', color: '#1E3A5F',
+    habitat: 'Exposed rocky coastline in the surf zone', edibility: 'Good edible (check quarantine status)',
+    idTips: 'Large (up to 10"), blue-black shells attached to rocks by byssal threads. Found in the wave-splash zone.',
+    lookalikes: [],
+    foragerScore: { identification: 5, abundance: 4, culinaryValue: 4, safetyRisk: 3, seasonLength: 3, preservation: 3 }
   }
 ];
 

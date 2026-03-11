@@ -8,8 +8,9 @@ const DB_PATH = path.join(__dirname, '..', 'data', 'cache.db');
 const API_BASE = 'https://api.inaturalist.org/v1';
 const RATE_MS = 1100;
 const PLACE_IDS = PNW_PLACE_IDS.join(',');
-const PAGES_PER_SPECIES = 10;
-const PER_PAGE = 200;
+const PAGES_PER_SPECIES = 3;
+const PER_PAGE = 100;
+const MAX_PHOTOS_PER_SPECIES = 50;
 
 let lastReq = 0;
 
@@ -69,6 +70,38 @@ function getCachedPhotoCount(taxonId) {
   const row = db.prepare('SELECT COUNT(*) as count FROM cached_photos WHERE taxon_id = ?').get(taxonId);
   db.close();
   return row?.count || 0;
+}
+
+function trimPhotos(taxonId, keep = MAX_PHOTOS_PER_SPECIES) {
+  const db = getDb();
+  const count = db.prepare('SELECT COUNT(*) as c FROM cached_photos WHERE taxon_id = ?').get(taxonId)?.c || 0;
+  if (count > keep) {
+    db.prepare(`
+      DELETE FROM cached_photos WHERE taxon_id = ? AND id NOT IN (
+        SELECT id FROM cached_photos WHERE taxon_id = ? AND quality_grade = 'research'
+        ORDER BY id DESC LIMIT ?
+      )
+    `).run(taxonId, taxonId, keep);
+    const after = db.prepare('SELECT COUNT(*) as c FROM cached_photos WHERE taxon_id = ?').get(taxonId)?.c || 0;
+    if (after > keep) {
+      db.prepare(`
+        DELETE FROM cached_photos WHERE taxon_id = ? AND id NOT IN (
+          SELECT id FROM cached_photos WHERE taxon_id = ? ORDER BY id DESC LIMIT ?
+        )
+      `).run(taxonId, taxonId, keep);
+    }
+  }
+  db.close();
+}
+
+function trimAllPhotos(speciesList) {
+  for (const s of speciesList) {
+    trimPhotos(s.taxonId);
+  }
+  const db = getDb();
+  const total = db.prepare('SELECT COUNT(*) as c FROM cached_photos').get()?.c || 0;
+  db.close();
+  return total;
 }
 
 function getCachedPhotos(taxonId, limit = 200) {
@@ -163,7 +196,17 @@ async function syncPhotosForSpecies(taxonId, maxPages = PAGES_PER_SPECIES) {
     }
   }
 
-  const finalCount = db.prepare('SELECT COUNT(*) as count FROM cached_photos WHERE taxon_id = ?').get(taxonId)?.count || 0;
+  let finalCount = db.prepare('SELECT COUNT(*) as count FROM cached_photos WHERE taxon_id = ?').get(taxonId)?.count || 0;
+
+  if (finalCount > MAX_PHOTOS_PER_SPECIES) {
+    db.prepare(`
+      DELETE FROM cached_photos WHERE taxon_id = ? AND id NOT IN (
+        SELECT id FROM cached_photos WHERE taxon_id = ? ORDER BY id DESC LIMIT ?
+      )
+    `).run(taxonId, taxonId, MAX_PHOTOS_PER_SPECIES);
+    finalCount = db.prepare('SELECT COUNT(*) as count FROM cached_photos WHERE taxon_id = ?').get(taxonId)?.count || 0;
+  }
+
   db.prepare(
     'INSERT OR REPLACE INTO photo_sync_status (taxon_id, last_sync, photo_count, pages_fetched) VALUES (?, ?, ?, ?)'
   ).run(taxonId, now, finalCount, pagesActual);
@@ -203,5 +246,7 @@ export {
   getCachedPhotos,
   getCachedPhotoCount,
   getAllPhotoStats,
-  getPhotoSyncStatus
+  getPhotoSyncStatus,
+  trimPhotos,
+  trimAllPhotos
 };
