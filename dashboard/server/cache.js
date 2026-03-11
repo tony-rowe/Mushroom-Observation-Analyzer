@@ -1,0 +1,171 @@
+import Database from 'better-sqlite3';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const DB_PATH = path.join(__dirname, '..', 'data', 'cache.db');
+
+let db;
+
+async function initDb() {
+  const fs = await import('fs');
+  const dir = path.dirname(DB_PATH);
+  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+
+  db = new Database(DB_PATH);
+  db.pragma('journal_mode = WAL');
+  db.pragma('cache_size = -64000');
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS api_cache (
+      cache_key TEXT PRIMARY KEY,
+      data TEXT NOT NULL,
+      created_at INTEGER NOT NULL,
+      ttl INTEGER NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS idx_cache_created ON api_cache(created_at);
+
+    CREATE TABLE IF NOT EXISTS observations (
+      id INTEGER PRIMARY KEY,
+      taxon_id INTEGER NOT NULL,
+      species_guess TEXT,
+      quality_grade TEXT,
+      latitude REAL,
+      longitude REAL,
+      observed_on TEXT,
+      place_guess TEXT,
+      photo_url TEXT,
+      user_login TEXT,
+      created_at TEXT,
+      updated_at TEXT
+    );
+    CREATE INDEX IF NOT EXISTS idx_obs_taxon ON observations(taxon_id);
+    CREATE INDEX IF NOT EXISTS idx_obs_date ON observations(observed_on);
+    CREATE INDEX IF NOT EXISTS idx_obs_quality ON observations(quality_grade);
+
+    CREATE TABLE IF NOT EXISTS sync_status (
+      taxon_id INTEGER PRIMARY KEY,
+      last_sync INTEGER NOT NULL,
+      total_fetched INTEGER DEFAULT 0,
+      page_count INTEGER DEFAULT 0
+    );
+  `);
+
+  return db;
+}
+
+function getCached(key, maxAgeSec = 3600) {
+  const row = db.prepare(
+    'SELECT data, created_at, ttl FROM api_cache WHERE cache_key = ?'
+  ).get(key);
+  if (!row) return null;
+  const age = (Date.now() / 1000) - row.created_at;
+  if (age > (row.ttl || maxAgeSec)) return null;
+  return JSON.parse(row.data);
+}
+
+function setCache(key, data, ttlSec = 3600) {
+  db.prepare(
+    'INSERT OR REPLACE INTO api_cache (cache_key, data, created_at, ttl) VALUES (?, ?, ?, ?)'
+  ).run(key, JSON.stringify(data), Math.floor(Date.now() / 1000), ttlSec);
+}
+
+function upsertObservations(observations) {
+  const stmt = db.prepare(`
+    INSERT OR REPLACE INTO observations
+    (id, taxon_id, species_guess, quality_grade, latitude, longitude, observed_on, place_guess, photo_url, user_login, created_at, updated_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `);
+
+  const upsertMany = db.transaction((obs) => {
+    for (const o of obs) {
+      stmt.run(
+        o.id, o.taxon_id, o.species_guess, o.quality_grade,
+        o.latitude, o.longitude, o.observed_on, o.place_guess,
+        o.photo_url, o.user_login, o.created_at, o.updated_at
+      );
+    }
+  });
+
+  upsertMany(observations);
+}
+
+function getObservationsForTaxon(taxonId) {
+  return db.prepare('SELECT * FROM observations WHERE taxon_id = ? ORDER BY observed_on DESC').all(taxonId);
+}
+
+function getAllObservations() {
+  return db.prepare('SELECT * FROM observations ORDER BY observed_on DESC').all();
+}
+
+function getObservationStats(taxonId) {
+  const total = db.prepare('SELECT COUNT(*) as count FROM observations WHERE taxon_id = ?').get(taxonId);
+  const byQuality = db.prepare(
+    'SELECT quality_grade, COUNT(*) as count FROM observations WHERE taxon_id = ? GROUP BY quality_grade'
+  ).all(taxonId);
+  const byMonth = db.prepare(
+    `SELECT CAST(strftime('%m', observed_on) AS INTEGER) as month, COUNT(*) as count
+     FROM observations WHERE taxon_id = ? AND observed_on IS NOT NULL
+     GROUP BY month ORDER BY month`
+  ).all(taxonId);
+  const byYear = db.prepare(
+    `SELECT strftime('%Y', observed_on) as year, COUNT(*) as count
+     FROM observations WHERE taxon_id = ? AND observed_on IS NOT NULL
+     GROUP BY year ORDER BY year`
+  ).all(taxonId);
+  const recentObs = db.prepare(
+    'SELECT * FROM observations WHERE taxon_id = ? ORDER BY observed_on DESC LIMIT 20'
+  ).all(taxonId);
+
+  return { total: total.count, byQuality, byMonth, byYear, recentObs };
+}
+
+function getGlobalStats() {
+  const totalObs = db.prepare('SELECT COUNT(*) as count FROM observations').get();
+  const totalSpecies = db.prepare('SELECT COUNT(DISTINCT taxon_id) as count FROM observations').get();
+  const byMonth = db.prepare(
+    `SELECT CAST(strftime('%m', observed_on) AS INTEGER) as month, COUNT(*) as count
+     FROM observations WHERE observed_on IS NOT NULL GROUP BY month ORDER BY month`
+  ).all();
+  const recentObs = db.prepare(
+    'SELECT * FROM observations ORDER BY observed_on DESC LIMIT 30'
+  ).all();
+  return { totalObs: totalObs.count, totalSpecies: totalSpecies.count, byMonth, recentObs };
+}
+
+function getSyncStatus(taxonId) {
+  return db.prepare('SELECT * FROM sync_status WHERE taxon_id = ?').get(taxonId);
+}
+
+function updateSyncStatus(taxonId, totalFetched, pageCount) {
+  db.prepare(
+    'INSERT OR REPLACE INTO sync_status (taxon_id, last_sync, total_fetched, page_count) VALUES (?, ?, ?, ?)'
+  ).run(taxonId, Math.floor(Date.now() / 1000), totalFetched, pageCount);
+}
+
+function getHeatmapData(taxonId) {
+  const query = taxonId
+    ? 'SELECT latitude, longitude FROM observations WHERE taxon_id = ? AND latitude IS NOT NULL AND longitude IS NOT NULL'
+    : 'SELECT latitude, longitude FROM observations WHERE latitude IS NOT NULL AND longitude IS NOT NULL';
+  const params = taxonId ? [taxonId] : [];
+  return db.prepare(query).all(...params);
+}
+
+function clearCache() {
+  db.exec('DELETE FROM api_cache');
+}
+
+export {
+  initDb,
+  getCached,
+  setCache,
+  upsertObservations,
+  getObservationsForTaxon,
+  getAllObservations,
+  getObservationStats,
+  getGlobalStats,
+  getSyncStatus,
+  updateSyncStatus,
+  getHeatmapData,
+  clearCache
+};
