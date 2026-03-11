@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { MapContainer, TileLayer, useMap } from 'react-leaflet';
+import { MapContainer, TileLayer, GeoJSON, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
@@ -121,6 +121,33 @@ function ResetFitOnChange({ resetKey }) {
   return null;
 }
 
+function FireLayer({ fireData }) {
+  if (!fireData || !fireData.features?.length) return null;
+
+  const style = (feature) => {
+    const acres = feature.properties?.acres || 0;
+    const opacity = Math.min(0.6, 0.2 + (acres / 50000) * 0.4);
+    return {
+      fillColor: '#ef4444',
+      fillOpacity: opacity,
+      color: '#dc2626',
+      weight: 1.5,
+      opacity: 0.8,
+      dashArray: '4 2'
+    };
+  };
+
+  const onEachFeature = (feature, layer) => {
+    const p = feature.properties || {};
+    layer.bindTooltip(
+      `<div style="text-align:center"><strong>🔥 ${p.name}</strong><br/>${p.acres?.toLocaleString()} acres (${p.year})</div>`,
+      { sticky: true, className: 'fire-tooltip' }
+    );
+  };
+
+  return <GeoJSON key={JSON.stringify(fireData).length} data={fireData} style={style} onEachFeature={onEachFeature} />;
+}
+
 export default function HeatMap({
   points = [],
   height = '500px',
@@ -128,11 +155,28 @@ export default function HeatMap({
   showControls = true,
   speciesFilter = null,
   species = [],
-  onSpeciesFilterChange
+  onSpeciesFilterChange,
+  showFireOverlay = true
 }) {
   const [radius, setRadius] = useState(18);
   const [blur, setBlur] = useState(25);
   const [tileLayer, setTileLayer] = useState('dark');
+  const [fireYear, setFireYear] = useState(null);
+  const [fireData, setFireData] = useState(null);
+  const [fireYears, setFireYears] = useState([]);
+  const [fireLoading, setFireLoading] = useState(false);
+
+  useEffect(() => {
+    if (showFireOverlay) {
+      fetch('/api/fires/years').then(r => r.json()).then(d => setFireYears(d.years || [])).catch(() => {});
+    }
+  }, [showFireOverlay]);
+
+  useEffect(() => {
+    if (!fireYear) { setFireData(null); return; }
+    setFireLoading(true);
+    fetch(`/api/fires/${fireYear}`).then(r => r.json()).then(d => { setFireData(d); setFireLoading(false); }).catch(() => setFireLoading(false));
+  }, [fireYear]);
 
   const tile = TILE_LAYERS[tileLayer];
 
@@ -155,9 +199,32 @@ export default function HeatMap({
             attribution={tile.attribution}
           />
           <HeatLayer points={points} options={{ radius, blur }} />
+          {fireData && <FireLayer fireData={fireData} />}
           <FitBounds points={points} />
         </MapContainer>
       </div>
+
+      {showFireOverlay && fireYears.length > 0 && (
+        <div className="absolute top-4 left-4 glass-card p-3 z-[1000] max-w-[200px]">
+          <p className="text-[10px] font-mono uppercase tracking-widest text-red-500 mb-1.5">🔥 Fire Overlays</p>
+          <div className="flex flex-wrap gap-1">
+            <button onClick={() => setFireYear(null)}
+              className={`px-2 py-0.5 rounded text-[10px] font-medium ${!fireYear ? 'bg-gray-600 text-white' : 'bg-green-900/40 text-gray-500 hover:text-white'}`}>Off</button>
+            {fireYears.slice(0, 10).map(y => (
+              <button key={y} onClick={() => setFireYear(y === fireYear ? null : y)}
+                className={`px-2 py-0.5 rounded text-[10px] font-medium transition-all ${
+                  fireYear === y ? 'bg-red-600 text-white' : 'bg-green-900/40 text-gray-500 hover:text-red-400'
+                }`}>{y}</button>
+            ))}
+          </div>
+          {fireLoading && <p className="text-[10px] text-gray-500 mt-1">Loading fire data...</p>}
+          {fireData && !fireLoading && (
+            <p className="text-[10px] text-red-400/80 mt-1">
+              {fireData.features?.length || 0} fires shown ({fireYear})
+            </p>
+          )}
+        </div>
+      )}
 
       {showControls && (
         <div className="absolute bottom-4 right-4 glass-card p-3 space-y-2 z-[1000]">

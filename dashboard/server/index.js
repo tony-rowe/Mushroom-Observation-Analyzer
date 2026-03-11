@@ -14,6 +14,7 @@ import { ALL_SPECIES, CATEGORIES } from './all-species.js';
 import { getSpeciesPhotos, getQuizPhotos } from './photos.js';
 import { importByTaxonId, getAllActiveSpecies, ensureImportTable, getImportedSpecies, deleteImportedSpecies } from './import.js';
 import { ensurePhotoTable, bulkSyncAllPhotos, getAllPhotoStats, syncPhotosForSpecies } from './photo-sync.js';
+import { fetchFirePerimeters, getAvailableYears, getFireSummary } from './fires.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PORT = process.env.API_PORT || 3001;
@@ -233,6 +234,34 @@ app.get('/api/field-guide/:id', (req, res) => {
   const species = getAllActiveSpecies().find(s => s.id === req.params.id);
   if (!species) return res.status(404).json({ error: 'Species not found' });
   res.json(species);
+});
+
+app.get('/api/fires/years', async (_req, res) => {
+  try {
+    const years = await getAvailableYears();
+    res.json({ years });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.get('/api/fires/:year', async (req, res) => {
+  try {
+    const year = req.params.year === 'current' ? 'current' : parseInt(req.params.year);
+    const geojson = await fetchFirePerimeters(year);
+    res.json(geojson);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.get('/api/fires/:year/summary', async (req, res) => {
+  try {
+    const summary = await getFireSummary(parseInt(req.params.year));
+    res.json(summary);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 app.get('/api/photos/stats', (_req, res) => {
