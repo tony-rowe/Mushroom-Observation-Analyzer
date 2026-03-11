@@ -5,6 +5,7 @@ import { fileURLToPath } from 'url';
 import { initDb, getObservationStats, getGlobalStats, getHeatmapData, getObservationsForTaxon, getAllObservations } from './cache.js';
 import { syncSpecies, fetchTaxonDetails } from './api.js';
 import { PNW_SPECIES, PNW_PLACE_IDS } from './species.js';
+import { getTopPicks, getSpeciesPredictions, getRegionPredictions, getRegionsGeoJSON } from './predictions.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PORT = process.env.API_PORT || 3001;
@@ -100,6 +101,45 @@ app.get('/api/heatmap', (req, res) => {
     const taxonId = req.query.taxon_id ? parseInt(req.query.taxon_id) : null;
     const points = getHeatmapData(taxonId);
     res.json({ points, count: points.length });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.get('/api/predictions', (req, res) => {
+  try {
+    const month = parseInt(req.query.month) || (new Date().getMonth() + 1);
+    const limit = parseInt(req.query.limit) || 15;
+    const topPicks = getTopPicks(month, limit);
+    res.json({ month, topPicks });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.get('/api/predictions/species/:id', (req, res) => {
+  try {
+    const month = parseInt(req.query.month) || (new Date().getMonth() + 1);
+    const predictions = getSpeciesPredictions(req.params.id, month);
+    res.json({ month, speciesId: req.params.id, predictions });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.get('/api/predictions/region/:id', (req, res) => {
+  try {
+    const month = parseInt(req.query.month) || (new Date().getMonth() + 1);
+    const predictions = getRegionPredictions(req.params.id, month);
+    res.json({ month, regionId: req.params.id, predictions });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.get('/api/regions/geojson', (_req, res) => {
+  try {
+    res.json(getRegionsGeoJSON());
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
