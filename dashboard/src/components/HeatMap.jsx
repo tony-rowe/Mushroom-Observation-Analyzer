@@ -5,6 +5,28 @@ import 'leaflet/dist/leaflet.css';
 
 const HEATMAP_SCRIPT = 'https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js';
 
+const PNW_CENTER = [44.0, -120.5];
+const PNW_ZOOM = 7;
+const PNW_MAX_BOUNDS = L.latLngBounds([40.0, -130.0], [50.5, -110.0]);
+
+const TILE_LAYERS = {
+  dark: {
+    url: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
+    attribution: '&copy; <a href="https://carto.com">CARTO</a>',
+    label: 'Dark'
+  },
+  terrain: {
+    url: 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',
+    attribution: '&copy; <a href="https://opentopomap.org">OpenTopoMap</a>',
+    label: 'Terrain'
+  },
+  satellite: {
+    url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+    attribution: '&copy; Esri',
+    label: 'Satellite'
+  }
+};
+
 let heatScriptLoaded = false;
 function loadHeatScript() {
   if (heatScriptLoaded) return Promise.resolve();
@@ -70,13 +92,31 @@ function FitBounds({ points }) {
 
   useEffect(() => {
     if (points.length > 0 && !fitted.current) {
-      const bounds = L.latLngBounds(points.map(p => [p.latitude, p.longitude]));
-      if (bounds.isValid()) {
-        map.fitBounds(bounds, { padding: [40, 40], maxZoom: 10 });
+      const dataBounds = L.latLngBounds(points.map(p => [p.latitude, p.longitude]));
+      if (dataBounds.isValid()) {
+        const clampedBounds = L.latLngBounds(
+          [Math.max(dataBounds.getSouth(), PNW_MAX_BOUNDS.getSouth()), Math.max(dataBounds.getWest(), PNW_MAX_BOUNDS.getWest())],
+          [Math.min(dataBounds.getNorth(), PNW_MAX_BOUNDS.getNorth()), Math.min(dataBounds.getEast(), PNW_MAX_BOUNDS.getEast())]
+        );
+        if (clampedBounds.isValid()) {
+          map.fitBounds(clampedBounds, { padding: [40, 40], maxZoom: 11 });
+        }
         fitted.current = true;
       }
     }
   }, [points, map]);
+
+  return null;
+}
+
+function ResetFitOnChange({ resetKey }) {
+  const fittedRef = useRef(null);
+
+  useEffect(() => {
+    if (fittedRef.current) {
+      fittedRef.current = false;
+    }
+  }, [resetKey]);
 
   return null;
 }
@@ -92,9 +132,9 @@ export default function HeatMap({
 }) {
   const [radius, setRadius] = useState(18);
   const [blur, setBlur] = useState(25);
+  const [tileLayer, setTileLayer] = useState('dark');
 
-  const PNW_CENTER = [45.5, -122.0];
-  const PNW_ZOOM = 6;
+  const tile = TILE_LAYERS[tileLayer];
 
   return (
     <div className={`relative ${className}`}>
@@ -104,10 +144,15 @@ export default function HeatMap({
           zoom={PNW_ZOOM}
           style={{ height: '100%', width: '100%' }}
           zoomControl={true}
+          maxBounds={PNW_MAX_BOUNDS}
+          maxBoundsViscosity={0.8}
+          minZoom={5}
+          maxZoom={15}
         >
           <TileLayer
-            url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
-            attribution='&copy; <a href="https://carto.com">CARTO</a>'
+            key={tileLayer}
+            url={tile.url}
+            attribution={tile.attribution}
           />
           <HeatLayer points={points} options={{ radius, blur }} />
           <FitBounds points={points} />
@@ -116,6 +161,21 @@ export default function HeatMap({
 
       {showControls && (
         <div className="absolute bottom-4 right-4 glass-card p-3 space-y-2 z-[1000]">
+          <div className="flex gap-1 mb-1">
+            {Object.entries(TILE_LAYERS).map(([key, layer]) => (
+              <button
+                key={key}
+                onClick={() => setTileLayer(key)}
+                className={`px-2 py-0.5 rounded text-[10px] font-medium transition-all ${
+                  tileLayer === key
+                    ? 'bg-mushroom-gold text-black'
+                    : 'bg-green-900/60 text-gray-400 hover:text-white'
+                }`}
+              >
+                {layer.label}
+              </button>
+            ))}
+          </div>
           <div className="flex items-center gap-2">
             <span className="text-[10px] text-gray-400 w-12">Radius</span>
             <input

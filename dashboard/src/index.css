@@ -101,7 +101,7 @@
 }
 
 .leaflet-tile-pane {
-  filter: saturate(0.6) brightness(0.7);
+  filter: saturate(0.7) brightness(0.75);
 }
 
 .leaflet-control-zoom a {

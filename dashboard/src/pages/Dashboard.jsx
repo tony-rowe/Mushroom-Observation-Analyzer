@@ -71,7 +71,7 @@ export default function Dashboard() {
             PNW Mushroom Dashboard
           </h1>
           <p className="text-gray-500 text-sm">
-            Tracking {species.length} edible species across Oregon, Washington & Idaho
+            Tracking {species.length} edible species across the Pacific Northwest
           </p>
         </div>
         <div className="flex gap-2">
