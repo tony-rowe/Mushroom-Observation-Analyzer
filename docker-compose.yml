@@ -1,0 +1,35 @@
+version: '3.8'
+
+# ============================================================
+# PNW Mushroom Dashboard - Docker Compose
+# Deploy on Synology NAS port 3060
+# ============================================================
+# Usage:
+#   docker-compose up -d --build   # Build and start
+#   docker-compose logs -f         # View logs
+#   docker-compose down           # Stop services
+# ============================================================
+
+services:
+  # Main application - Node.js API + Nginx frontend
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: mushroom-dashboard
+    ports:
+      - "3060:3060"
+    volumes:
+      - mushroom-data:/app/data
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3060/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+volumes:
+  mushroom-data:
+    driver: local
