@@ -10,6 +10,8 @@ import { PNW_SPECIES, PNW_PLACE_IDS } from './species.js';
 import { getTopPicks, getSpeciesPredictions, getRegionPredictions, getRegionsGeoJSON, setCalibration, getCalibration } from './predictions.js';
 import { runBacktest } from './backtest.js';
 import { loadCerts } from './ssl.js';
+import { ALL_SPECIES, CATEGORIES } from './all-species.js';
+import { getSpeciesPhotos, getQuizPhotos } from './photos.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PORT = process.env.API_PORT || 3001;
@@ -181,6 +183,71 @@ app.post('/api/backtest', (_req, res) => {
 
 app.get('/api/backtest', (_req, res) => {
   res.json({ calibration: lastBacktestResult, calibrated: !!getCalibration() });
+});
+
+app.get('/api/field-guide', (req, res) => {
+  const category = req.query.category;
+  let species = ALL_SPECIES;
+  if (category && category !== 'all') {
+    species = species.filter(s => s.category === category);
+  }
+  res.json({ species, categories: CATEGORIES, total: species.length });
+});
+
+app.get('/api/field-guide/:id', (req, res) => {
+  const species = ALL_SPECIES.find(s => s.id === req.params.id);
+  if (!species) return res.status(404).json({ error: 'Species not found' });
+  res.json(species);
+});
+
+app.get('/api/photos/:taxonId', async (req, res) => {
+  try {
+    const taxonId = parseInt(req.params.taxonId);
+    const count = Math.min(parseInt(req.query.count) || 20, 50);
+    const photos = await getSpeciesPhotos(taxonId, count);
+    res.json({ taxonId, photos, count: photos.length });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.get('/api/quiz', async (req, res) => {
+  try {
+    const category = req.query.category || 'all';
+    const count = Math.min(parseInt(req.query.count) || 10, 30);
+    let pool = ALL_SPECIES.filter(s => s.taxonId);
+    if (category !== 'all') pool = pool.filter(s => s.category === category);
+
+    const shuffled = [...pool].sort(() => Math.random() - 0.5).slice(0, count);
+    const taxonIds = shuffled.map(s => s.taxonId);
+    const photos = await getQuizPhotos(taxonIds, 3);
+
+    const questions = [];
+    for (const species of shuffled) {
+      const speciesPhotos = photos.filter(p => p.taxonId === species.taxonId);
+      if (speciesPhotos.length === 0) continue;
+      const photo = speciesPhotos[Math.floor(Math.random() * speciesPhotos.length)];
+
+      const wrongPool = pool.filter(s => s.id !== species.id && s.category === species.category);
+      const wrongs = [...wrongPool].sort(() => Math.random() - 0.5).slice(0, 3);
+      const options = [species, ...wrongs].sort(() => Math.random() - 0.5);
+
+      questions.push({
+        photo: { url: photo.url, urlLarge: photo.urlLarge, attribution: photo.attribution, placeGuess: photo.placeGuess, observedOn: photo.observedOn },
+        correctId: species.id,
+        correctName: species.commonName,
+        category: species.category,
+        options: options.map(o => ({ id: o.id, commonName: o.commonName, scientificName: o.scientificName, emoji: o.emoji })),
+        hint: species.idTips,
+        lookalikes: species.lookalikes || []
+      });
+    }
+
+    res.json({ questions, category, total: questions.length });
+  } catch (err) {
+    console.error('Quiz error:', err);
+    res.status(500).json({ error: err.message });
+  }
 });
 
 async function start() {
