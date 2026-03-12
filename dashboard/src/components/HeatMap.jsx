@@ -10,10 +10,10 @@ const PNW_ZOOM = 7;
 const PNW_MAX_BOUNDS = L.latLngBounds([40.0, -130.0], [50.5, -110.0]);
 
 const TILE_LAYERS = {
-  dark: {
-    url: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
+  light: {
+    url: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
     attribution: '&copy; <a href="https://carto.com">CARTO</a>',
-    label: 'Dark'
+    label: 'Light'
   },
   terrain: {
     url: 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',
@@ -160,7 +160,7 @@ export default function HeatMap({
 }) {
   const [radius, setRadius] = useState(18);
   const [blur, setBlur] = useState(25);
-  const [tileLayer, setTileLayer] = useState('dark');
+  const [tileLayer, setTileLayer] = useState('light');
   const [fireYear, setFireYear] = useState(null);
   const [fireData, setFireData] = useState(null);
   const [fireYears, setFireYears] = useState([]);
@@ -182,7 +182,7 @@ export default function HeatMap({
 
   return (
     <div className={`relative ${className}`}>
-      <div style={{ height }} className="rounded-2xl overflow-hidden border border-green-800/30">
+      <div style={{ height }} className="rounded-2xl overflow-hidden border border-green-300">
         <MapContainer
           center={PNW_CENTER}
           zoom={PNW_ZOOM}
