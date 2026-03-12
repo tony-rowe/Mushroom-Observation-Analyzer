@@ -9,22 +9,41 @@ import Training from './pages/Training';
 import Import from './pages/Import';
 import { useApi } from './hooks/useApi';
 
-function Sidebar({ species, syncing }) {
+function Sidebar({ species, syncing, isOpen, onClose }) {
   const location = useLocation();
 
   return (
-    <aside className="fixed left-0 top-0 bottom-0 w-64 bg-gradient-to-b from-[#0a130a] to-[#060b06] border-r border-green-900/40 flex flex-col z-40 overflow-hidden">
-      <div className="p-5 border-b border-green-900/30">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-mushroom-gold/20 flex items-center justify-center text-xl">
-            🍄
+    <>
+      {/* Mobile overlay */}
+      {isOpen && (
+        <div 
+          className="fixed inset-0 bg-black/70 z-40 lg:hidden"
+          onClick={onClose}
+        />
+      )}
+      
+      <aside className={`fixed left-0 top-0 bottom-0 w-64 bg-gradient-to-b from-green-50 to-white border-r border-green-200 flex flex-col z-50 overflow-hidden transition-transform duration-300 shadow-lg ${
+        isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
+      }`}>
+        <div className="p-5 border-b border-green-200 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-mushroom-gold/30 flex items-center justify-center text-xl">
+              🍄
+            </div>
+            <div>
+              <h1 className="text-base font-bold text-green-900 tracking-tight">PNW Mushrooms</h1>
+              <p className="text-[10px] text-green-600 font-mono uppercase tracking-widest">Live Dashboard</p>
+            </div>
           </div>
-          <div>
-            <h1 className="text-base font-bold text-white tracking-tight">PNW Mushrooms</h1>
-            <p className="text-[10px] text-green-500 font-mono uppercase tracking-widest">Live Dashboard</p>
-          </div>
+          <button 
+            onClick={onClose}
+            className="lg:hidden p-2 text-green-600 hover:text-green-900"
+          >
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
         </div>
-      </div>
 
       <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
         <NavLink to="/" end className={({isActive}) => `nav-link ${isActive ? 'active' : ''}`}>
@@ -53,7 +72,7 @@ function Sidebar({ species, syncing }) {
         </NavLink>
 
         <div className="pt-4 pb-2 px-2">
-          <p className="text-[10px] font-mono uppercase tracking-widest text-green-700">Quick Access</p>
+          <p className="text-[10px] font-mono uppercase tracking-widest text-green-600">Quick Access</p>
         </div>
         <div className="space-y-0.5 max-h-[400px] overflow-y-auto">
           {species?.map(s => (
@@ -63,8 +82,8 @@ function Sidebar({ species, syncing }) {
               className={({isActive}) =>
                 `flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs transition-all duration-200 ${
                   isActive
-                    ? 'text-mushroom-gold bg-mushroom-gold/10'
-                    : 'text-gray-500 hover:text-gray-300 hover:bg-green-900/30'
+                    ? 'text-mushroom-gold bg-mushroom-gold/20'
+                    : 'text-green-700 hover:text-green-900 hover:bg-green-100'
                 }`
               }
             >
@@ -76,20 +95,22 @@ function Sidebar({ species, syncing }) {
       </nav>
 
       {syncing && (
-        <div className="p-3 border-t border-green-900/30">
-          <div className="flex items-center gap-2 text-xs text-green-500">
-            <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+        <div className="p-3 border-t border-green-200">
+          <div className="flex items-center gap-2 text-xs text-green-600">
+            <div className="w-2 h-2 rounded-full bg-green-600 animate-pulse" />
             Syncing data...
           </div>
         </div>
       )}
     </aside>
+    </>
   );
 }
 
 export default function App() {
   const { data: speciesData } = useApi('/species');
   const [syncing, setSyncing] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => {
     const interval = setInterval(async () => {
@@ -104,8 +125,32 @@ export default function App() {
 
   return (
     <div className="flex min-h-screen">
-      <Sidebar species={speciesData?.species} syncing={syncing} />
-      <main className="flex-1 ml-64 p-6">
+      <Sidebar 
+        species={speciesData?.species} 
+        syncing={syncing} 
+        isOpen={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
+      />
+      <main className="flex-1 lg:ml-64 p-4 lg:p-6">
+        {/* Mobile header with hamburger menu */}
+        <div className="lg:hidden mb-4 flex items-center justify-between">
+          <button 
+            onClick={() => setSidebarOpen(true)}
+            className="p-2 text-green-700 hover:text-green-900"
+          >
+            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+          </button>
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-lg bg-mushroom-gold/30 flex items-center justify-center">
+              🍄
+            </div>
+            <span className="text-sm font-semibold text-green-900">PNW Mushrooms</span>
+          </div>
+          <div className="w-10"></div> {/* Spacer for balance */}
+        </div>
+        
         <Routes>
           <Route path="/" element={<Dashboard />} />
           <Route path="/map" element={<MapView />} />

@@ -52,25 +52,25 @@ export default function SpeciesPage() {
   return (
     <div className="fade-in space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-white mb-1">🍄 Species Guide</h1>
-        <p className="text-gray-500 text-sm">{species.length} PNW edible mushroom species</p>
+        <h1 className="text-2xl sm:text-3xl font-bold text-green-900 mb-1">🍄 Species Guide</h1>
+        <p className="text-green-700 text-xs sm:text-sm">{species.length} PNW edible mushroom species</p>
       </div>
 
-      <div className="flex flex-wrap gap-3 items-center">
-        <div className="relative flex-1 min-w-[200px] max-w-sm">
+      <div className="flex flex-col sm:flex-row flex-wrap gap-3 items-start sm:items-center">
+        <div className="relative w-full sm:flex-1 sm:min-w-[200px] sm:max-w-sm">
           <input
             type="text"
             value={search}
             onChange={e => setSearch(e.target.value)}
             placeholder="Search species..."
-            className="w-full bg-green-950/40 border border-green-800/30 rounded-xl px-4 py-2.5 text-sm text-gray-200 placeholder-gray-600 focus:outline-none focus:border-mushroom-gold/50 transition-colors"
+            className="w-full bg-white border border-green-300 rounded-xl px-4 py-2.5 text-sm text-green-900 placeholder-green-500 focus:outline-none focus:border-mushroom-gold/50 transition-colors"
           />
-          <svg className="absolute right-3 top-3 w-4 h-4 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <svg className="absolute right-3 top-3 w-4 h-4 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
           </svg>
         </div>
 
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
           {[
             { value: 'all', label: 'All' },
             { value: 'in-season', label: '🌿 In Season' },
@@ -82,7 +82,7 @@ export default function SpeciesPage() {
               className={`px-3 py-2 rounded-xl text-xs font-medium transition-all ${
                 filter === f.value
                   ? 'bg-mushroom-gold text-black'
-                  : 'bg-green-900/40 text-gray-400 hover:text-white'
+                  : 'bg-green-100 text-green-800 hover:text-green-900 hover:bg-green-200'
               }`}
             >
               {f.label}
@@ -93,7 +93,7 @@ export default function SpeciesPage() {
         <select
           value={sortBy}
           onChange={e => setSortBy(e.target.value)}
-          className="bg-green-950/40 border border-green-800/30 rounded-xl px-3 py-2 text-xs text-gray-300 focus:outline-none"
+          className="bg-white border border-green-300 rounded-xl px-3 py-2 text-xs text-green-900 focus:outline-none w-full sm:w-auto"
         >
           <option value="name">Sort: Name</option>
           <option value="observations">Sort: Observations</option>
@@ -102,19 +102,19 @@ export default function SpeciesPage() {
       </div>
 
       {isLoading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-4">
           {Array.from({ length: 8 }, (_, i) => <SkeletonCard key={i} />)}
         </div>
       ) : (
         <>
-          <p className="text-xs text-gray-600">{filtered.length} species shown</p>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          <p className="text-xs text-green-700">{filtered.length} species shown</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-4">
             {filtered.map(s => (
               <SpeciesCard key={s.id} species={s} stats={speciesStats.find(st => st.id === s.id)} />
             ))}
           </div>
           {filtered.length === 0 && (
-            <div className="text-center py-12 text-gray-600">
+            <div className="text-center py-12 text-green-700">
               No species match your search.
             </div>
           )}

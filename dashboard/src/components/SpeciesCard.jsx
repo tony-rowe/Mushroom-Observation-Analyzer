@@ -15,12 +15,12 @@ export default function SpeciesCard({ species, stats }) {
         </div>
       </div>
 
-      <h3 className="text-sm font-semibold text-white group-hover:text-mushroom-gold transition-colors leading-tight">
+      <h3 className="text-sm font-semibold text-green-900 group-hover:text-mushroom-gold transition-colors leading-tight">
         {species.commonName}
       </h3>
-      <p className="text-xs text-green-500/70 italic mt-0.5">{species.scientificName}</p>
+      <p className="text-xs text-green-600 italic mt-0.5">{species.scientificName}</p>
 
-      <p className="text-xs text-gray-500 mt-2 line-clamp-2 leading-relaxed">{species.description}</p>
+      <p className="text-xs text-green-700 mt-2 line-clamp-2 leading-relaxed">{species.description}</p>
 
       <div className="flex items-center gap-2 mt-3 flex-wrap">
         <span className="stat-badge">
@@ -52,8 +52,8 @@ export default function SpeciesCard({ species, stats }) {
         })}
       </div>
       <div className="flex justify-between mt-1">
-        <span className="text-[9px] text-gray-600">Jan</span>
-        <span className="text-[9px] text-gray-600">Dec</span>
+        <span className="text-[9px] text-green-600">Jan</span>
+        <span className="text-[9px] text-green-600">Dec</span>
       </div>
     </Link>
   );

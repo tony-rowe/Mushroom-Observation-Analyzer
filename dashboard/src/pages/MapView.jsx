@@ -31,10 +31,10 @@ export default function MapView() {
     <div className="fade-in space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-white mb-1">
+          <h1 className="text-2xl sm:text-3xl font-bold text-white mb-1">
             🗺️ Heatmap Explorer
           </h1>
-          <p className="text-gray-500 text-sm">
+          <p className="text-gray-500 text-xs sm:text-sm">
             {selectedSpecies
               ? `Showing ${selectedSpecies.commonName} observations`
               : 'All PNW edible mushroom observations'}
@@ -48,7 +48,7 @@ export default function MapView() {
           className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-all ${
             !selectedTaxon
               ? 'bg-mushroom-gold text-black'
-              : 'bg-green-900/40 text-gray-400 hover:text-white hover:bg-green-900/60'
+              : 'bg-green-100 text-green-800 hover:text-green-900 hover:bg-green-200'
           }`}
         >
           All Species ({totalCount.toLocaleString()})
@@ -57,14 +57,14 @@ export default function MapView() {
           <button
             key={s.id}
             onClick={() => setSelectedTaxon(s.taxonId === selectedTaxon ? null : s.taxonId)}
-            className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-all flex items-center gap-1 ${
+            className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-all ${
               selectedTaxon === s.taxonId
                 ? 'bg-mushroom-gold text-black'
-                : 'bg-green-900/40 text-gray-400 hover:text-white hover:bg-green-900/60'
+                : 'bg-green-100 text-green-800 hover:text-green-900 hover:bg-green-200'
             }`}
           >
-            <span>{s.emoji}</span>
-            {s.commonName.replace(/ \(.*\)/, '').split(' ').slice(-1)[0]}
+            <span className="hidden sm:inline">{s.commonName.replace(/ \(.*\)/, '').split(' ').slice(-1)[0]}</span>
+            <span className="sm:hidden">{s.commonName.split(' ').slice(-1)[0].substring(0, 3)}</span>
           </button>
         ))}
       </div>

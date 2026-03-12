@@ -56,7 +56,7 @@ export default function Dashboard() {
           <h1 className="text-3xl font-bold text-white mb-1">Dashboard</h1>
           <p className="text-gray-500">Loading PNW mushroom data...</p>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 mb-6 md:mb-8">
           {[1,2,3,4].map(i => <SkeletonCard key={i} />)}
         </div>
       </div>
@@ -65,17 +65,17 @@ export default function Dashboard() {
 
   return (
     <div className="fade-in space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
         <div>
-          <h1 className="text-3xl font-bold text-white mb-1">
+          <h1 className="text-2xl sm:text-3xl font-bold text-green-900 mb-1">
             PNW Mushroom Dashboard
           </h1>
-          <p className="text-gray-500 text-sm">
+          <p className="text-green-700 text-xs sm:text-sm">
             Tracking {species.length} edible species across the Pacific Northwest
           </p>
         </div>
         <div className="flex gap-2">
-          <button onClick={handleSyncAll} disabled={syncing} className="btn-primary flex items-center gap-2">
+          <button onClick={handleSyncAll} disabled={syncing} className="btn-primary flex items-center gap-2 text-xs sm:text-sm">
             {syncing ? (
               <>
                 <div className="w-3 h-3 border border-black border-t-transparent rounded-full animate-spin" />
@@ -91,7 +91,7 @@ export default function Dashboard() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
         <StatCard
           label="Total Observations"
           value={formatNumber(stats.totalObs || 0)}
@@ -136,24 +136,24 @@ export default function Dashboard() {
         )}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="glass-card p-5">
-          <h2 className="text-lg font-semibold text-white mb-1">Seasonal Activity</h2>
-          <p className="text-xs text-gray-500 mb-4">Observations by month across all species</p>
-          <SeasonalChart data={stats.byMonth || []} height={260} />
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
+        <div className="glass-card p-4 md:p-5">
+          <h2 className="text-base md:text-lg font-semibold text-white mb-1">Seasonal Activity</h2>
+          <p className="text-xs text-gray-500 mb-3 md:mb-4">Observations by month across all species</p>
+          <SeasonalChart data={stats.byMonth || []} height={240} />
         </div>
-        <div className="glass-card p-5">
-          <h2 className="text-lg font-semibold text-white mb-1">Observations by Species</h2>
-          <p className="text-xs text-gray-500 mb-4">Top species by observation count</p>
-          <MultiSpeciesChart speciesStats={speciesStats} height={260} />
+        <div className="glass-card p-4 md:p-5">
+          <h2 className="text-base md:text-lg font-semibold text-white mb-1">Observations by Species</h2>
+          <p className="text-xs text-gray-500 mb-3 md:mb-4">Top species by observation count</p>
+          <MultiSpeciesChart speciesStats={speciesStats} height={240} />
         </div>
       </div>
 
-      <div className="glass-card p-5">
-        <h2 className="text-lg font-semibold text-white mb-1">Quality Distribution</h2>
-        <p className="text-xs text-gray-500 mb-4">Observation verification grades</p>
-        <div className="h-64">
-          <QualityPieChart data={qualityData} height={250} />
+      <div className="glass-card p-4 md:p-5">
+        <h2 className="text-base md:text-lg font-semibold text-white mb-1">Quality Distribution</h2>
+        <p className="text-xs text-gray-500 mb-3 md:mb-4">Observation verification grades</p>
+        <div className="h-48 md:h-64">
+          <QualityPieChart data={qualityData} height={200} />
         </div>
       </div>
 
@@ -167,7 +167,7 @@ export default function Dashboard() {
               <p className="text-xs text-gray-500">{inSeasonNow.length} species currently fruiting in the PNW</p>
             </div>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
             {inSeasonNow.map(s => (
               <SpeciesCard key={s.id} species={s} stats={speciesStats.find(st => st.id === s.id)} />
             ))}
@@ -183,7 +183,7 @@ export default function Dashboard() {
           </div>
           <Link to="/species" className="btn-ghost text-xs">View All →</Link>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-4">
           {species.slice(0, 8).map(s => (
             <SpeciesCard key={s.id} species={s} stats={speciesStats.find(st => st.id === s.id)} />
           ))}
@@ -195,14 +195,14 @@ export default function Dashboard() {
 
 function StatCard({ label, value, subtext, icon, color }) {
   return (
-    <div className="glass-card p-4 flex items-center gap-4">
-      <div className="w-12 h-12 rounded-xl bg-green-900/40 flex items-center justify-center text-xl flex-shrink-0">
+    <div className="glass-card p-3 md:p-4 flex items-center gap-3 md:gap-4">
+      <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl bg-green-100 flex items-center justify-center text-lg md:text-xl flex-shrink-0">
         {icon}
       </div>
       <div>
-        <p className={`text-2xl font-bold ${color}`}>{value}</p>
-        <p className="text-xs text-gray-400">{label}</p>
-        {subtext && <p className="text-[10px] text-gray-600">{subtext}</p>}
+        <p className={`text-xl md:text-2xl font-bold ${color}`}>{value}</p>
+        <p className="text-xs text-green-700">{label}</p>
+        {subtext && <p className="text-[10px] text-green-600">{subtext}</p>}
       </div>
     </div>
   );
