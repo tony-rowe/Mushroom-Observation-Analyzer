@@ -114,7 +114,7 @@ export default function Import() {
             <Step n="1" text="Fetches taxonomy, photos, Wikipedia summary from iNaturalist" />
             <Step n="2" text="Auto-detects category (fungi, berry, plant, flower, fish, etc.)" />
             <Step n="3" text="Generates default season, ecology, and forager score" />
-            <Step n="4" text="Syncs observations in the full Pacific Northwest boundary" />
+            <Step n="4" text="Syncs observations in Oregon and Washington" />
             <Step n="5" text="Adds to predictions, heatmaps, field guide, and quiz" />
             <Step n="6" text="Included in next backtest calibration run" />
           </div>

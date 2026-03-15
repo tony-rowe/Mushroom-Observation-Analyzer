@@ -23,7 +23,8 @@ python3 -m streamlit run streamlit/app.py
 
 By default, the app loads tracked taxon IDs from `dashboard/server/species.js` and queries:
 
-- Flora of the Pacific Northwest boundary (`97394`)
+- Oregon (`10`)
+- Washington (`11`)
 
 ## Notes on query efficiency
 

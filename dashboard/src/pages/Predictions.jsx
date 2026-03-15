@@ -196,8 +196,9 @@ export default function Predictions() {
             className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-all ${
               selectedSpecies === s.id ? 'bg-mushroom-gold text-black' : 'bg-green-100 text-green-800 hover:text-green-900'
             }`}
+            title={s.commonName}
           >
-            <span className="hidden lg:inline">{s.commonName.split(' ').slice(-1)[0]}</span>
+            <span>{s.commonName}</span>
           </button>
         ))}
       </div>

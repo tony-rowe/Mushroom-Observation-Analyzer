@@ -241,7 +241,7 @@ const PNW_SPECIES = [
   }
 ];
 
-// Flora of the Pacific Northwest region boundary (broader than OR/WA/ID only)
-const PNW_PLACE_IDS = [97394];
+// Oregon + Washington only
+const PNW_PLACE_IDS = [10, 11];
 
 export { PNW_SPECIES, PNW_PLACE_IDS };
