@@ -5,8 +5,8 @@ import http from 'http';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { initDb, getObservationStats, getGlobalStats, getHeatmapData, getObservationsForTaxon, getAllObservations } from './cache.js';
-import { syncSpecies, fetchTaxonDetails } from './api.js';
-import { PNW_SPECIES, PNW_PLACE_IDS } from './species.js';
+import { syncSpecies, syncSpeciesBatch, fetchTaxonDetails } from './api.js';
+import { PNW_PLACE_IDS } from './species.js';
 import { getTopPicks, getSpeciesPredictions, getRegionPredictions, getRegionsGeoJSON, setCalibration, getCalibration } from './predictions.js';
 import { runBacktest } from './backtest.js';
 import { loadCerts } from './ssl.js';
@@ -72,23 +72,31 @@ app.post('/api/sync/:taxonId', async (req, res) => {
 });
 
 app.post('/api/sync-all', async (_req, res) => {
-  res.json({ status: 'started', total: PNW_SPECIES.length });
+  const allSpecies = getAllActiveSpecies();
+  res.json({ status: 'started', total: allSpecies.length });
 
   (async () => {
-    for (const species of PNW_SPECIES) {
-      if (!syncProgress.get(species.taxonId)) {
-        syncProgress.set(species.taxonId, true);
-        try {
-          await syncSpecies(species.taxonId);
-          console.log(`Synced: ${species.commonName} (${species.taxonId})`);
-        } catch (err) {
-          console.error(`Failed to sync ${species.commonName}:`, err.message);
-        } finally {
-          syncProgress.delete(species.taxonId);
-        }
+    const taxonIds = allSpecies.map(s => s.taxonId);
+    for (const taxonId of taxonIds) {
+      syncProgress.set(taxonId, true);
+    }
+
+    try {
+      const result = await syncSpeciesBatch(taxonIds);
+      const speciesNameByTaxon = new Map(allSpecies.map(s => [s.taxonId, s.commonName]));
+      for (const item of result.perTaxon || []) {
+        const speciesName = speciesNameByTaxon.get(item.taxonId) || `Taxon ${item.taxonId}`;
+        const statusLabel = item.cached ? 'cached' : 'synced';
+        console.log(`${statusLabel.toUpperCase()}: ${speciesName} (${item.taxonId}) - ${item.total} observations`);
+      }
+      console.log(`Batch sync complete: ${result.total} observations fetched across ${taxonIds.length} taxa.`);
+    } catch (err) {
+      console.error('Failed batch sync for all species:', err.message);
+    } finally {
+      for (const taxonId of taxonIds) {
+        syncProgress.delete(taxonId);
       }
     }
-    console.log('Background sync complete for all species.');
   })();
 });
 
@@ -364,19 +372,29 @@ async function start() {
 
   const allSpecies = getAllActiveSpecies();
   console.log(`Starting background sync of ${allSpecies.length} species...`);
-  for (const species of allSpecies) {
-    syncProgress.set(species.taxonId, true);
-    try {
-      const result = await syncSpecies(species.taxonId);
-      if (result.synced) {
-        console.log(`  ✓ ${species.commonName}: ${result.total} observations`);
+  const taxonIds = allSpecies.map(s => s.taxonId);
+  for (const taxonId of taxonIds) {
+    syncProgress.set(taxonId, true);
+  }
+  try {
+    const result = await syncSpeciesBatch(taxonIds);
+    const speciesNameByTaxon = new Map(allSpecies.map(s => [s.taxonId, s.commonName]));
+    for (const item of result.perTaxon || []) {
+      const speciesName = speciesNameByTaxon.get(item.taxonId) || `Taxon ${item.taxonId}`;
+      if (item.synced) {
+        console.log(`  ✓ ${speciesName}: ${item.total} observations`);
       } else {
-        console.log(`  ✓ ${species.commonName}: cached (${result.total} obs)`);
+        console.log(`  ✓ ${speciesName}: cached (${item.total} obs)`);
       }
-    } catch (err) {
-      console.error(`  ✗ ${species.commonName}: ${err.message}`);
-    } finally {
-      syncProgress.delete(species.taxonId);
+    }
+    if (result.truncated) {
+      console.warn('Initial batch sync reached the page cap. Consider increasing MAX_BATCH_PAGES in server/api.js for deeper history.');
+    }
+  } catch (err) {
+    console.error('Initial batch sync failed:', err.message);
+  } finally {
+    for (const taxonId of taxonIds) {
+      syncProgress.delete(taxonId);
     }
   }
   console.log('Initial sync complete.');

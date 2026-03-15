@@ -140,7 +140,7 @@ function FireLayer({ fireData }) {
   const onEachFeature = (feature, layer) => {
     const p = feature.properties || {};
     layer.bindTooltip(
-      `<div style="text-align:center"><strong>🔥 ${p.name}</strong><br/>${p.acres?.toLocaleString()} acres (${p.year})</div>`,
+      `<div style="text-align:center"><strong>${p.name}</strong><br/>${p.acres?.toLocaleString()} acres (${p.year})</div>`,
       { sticky: true, className: 'fire-tooltip' }
     );
   };
@@ -206,7 +206,7 @@ export default function HeatMap({
 
       {showFireOverlay && fireYears.length > 0 && (
         <div className="absolute top-4 left-4 glass-card p-3 z-[1000] max-w-[200px]">
-          <p className="text-[10px] font-mono uppercase tracking-widest text-red-500 mb-1.5">🔥 Fire Overlays</p>
+          <p className="text-[10px] font-mono uppercase tracking-widest text-red-500 mb-1.5">Fire Overlays</p>
           <div className="flex flex-wrap gap-1">
             <button onClick={() => setFireYear(null)}
               className={`px-2 py-0.5 rounded text-[10px] font-medium ${!fireYear ? 'bg-gray-600 text-white' : 'bg-green-900/40 text-gray-500 hover:text-white'}`}>Off</button>
@@ -293,7 +293,6 @@ export default function HeatMap({
                 onChange={() => onSpeciesFilterChange(speciesFilter === s.taxonId ? null : s.taxonId)}
                 className="accent-mushroom-gold"
               />
-              <span>{s.emoji}</span>
               <span className="truncate">{s.commonName}</span>
             </label>
           ))}

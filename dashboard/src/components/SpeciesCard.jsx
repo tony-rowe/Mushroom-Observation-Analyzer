@@ -8,7 +8,9 @@ export default function SpeciesCard({ species, stats }) {
   return (
     <Link to={`/species/${species.id}`} className="glass-card-hover p-5 block group">
       <div className="flex items-start justify-between mb-3">
-        <div className="text-3xl">{species.emoji}</div>
+        <div className="w-10 h-10 rounded-xl bg-green-100 text-green-900 text-sm font-semibold flex items-center justify-center">
+          {(species.commonName || 'S').charAt(0)}
+        </div>
         <div className="text-right">
           <div className="text-lg font-bold text-mushroom-gold">{formatNumber(obsCount)}</div>
           <div className="text-[10px] text-gray-500 uppercase tracking-wider">observations</div>

@@ -40,8 +40,8 @@ export default function Import() {
   return (
     <div className="fade-in space-y-6 max-w-4xl">
       <div>
-        <h1 className="text-3xl font-bold text-white mb-1">📥 Import Species</h1>
-        <p className="text-gray-500 text-sm">Drop in any iNaturalist taxon ID to auto-import a species into the system</p>
+        <h1 className="text-3xl font-bold text-white mb-1">Import Species</h1>
+        <p className="text-gray-500 text-sm">Add an iNaturalist taxon ID to register a new species in the system</p>
       </div>
 
       <div className="glass-card p-6">
@@ -83,7 +83,6 @@ export default function Import() {
             borderColor: result.status === 'imported' ? 'rgba(34,197,94,0.3)' : 'rgba(250,204,21,0.3)'
           }}>
             <div className="flex items-center gap-3 mb-2">
-              <span className="text-2xl">{result.species?.emoji}</span>
               <div>
                 <p className="text-sm font-semibold text-white">{result.species?.commonName}</p>
                 <p className="text-xs text-green-500 italic">{result.species?.scientificName}</p>
@@ -92,7 +91,7 @@ export default function Import() {
                 background: result.status === 'imported' ? 'rgba(34,197,94,0.2)' : 'rgba(250,204,21,0.2)',
                 color: result.status === 'imported' ? '#22c55e' : '#facc15'
               }}>
-                {result.status === 'imported' ? '✅ Imported' : '📋 Already exists'}
+                {result.status === 'imported' ? 'Imported' : 'Already exists'}
               </span>
             </div>
             <p className="text-xs text-gray-400">{result.message}</p>
@@ -123,15 +122,14 @@ export default function Import() {
       </div>
 
       <div className="glass-card p-5">
-        <h2 className="text-lg font-semibold text-white mb-3">📦 User-Imported Species ({imported.length})</h2>
+        <h2 className="text-lg font-semibold text-white mb-3">User-Imported Species ({imported.length})</h2>
         {loadingList ? <LoadingSpinner message="Loading..." size="sm" /> : imported.length === 0 ? (
-          <p className="text-sm text-gray-600">No user-imported species yet. Use the form above to add your first!</p>
+          <p className="text-sm text-gray-600">No user-imported species yet. Use the form above to add one.</p>
         ) : (
           <div className="space-y-2">
             {imported.map(s => (
               <div key={s.id} className="flex items-center justify-between p-3 rounded-xl bg-green-950/30 border border-green-800/20">
                 <div className="flex items-center gap-3">
-                  <span className="text-xl">{s.emoji}</span>
                   <div>
                     <p className="text-sm text-white font-medium">{s.commonName}</p>
                     <p className="text-[10px] text-gray-500">{s.scientificName} · taxon {s.taxonId} · {s.category}</p>

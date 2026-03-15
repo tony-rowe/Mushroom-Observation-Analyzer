@@ -52,8 +52,8 @@ export default function SpeciesPage() {
   return (
     <div className="fade-in space-y-6">
       <div>
-        <h1 className="text-2xl sm:text-3xl font-bold text-green-900 mb-1">🍄 Species Guide</h1>
-        <p className="text-green-700 text-xs sm:text-sm">{species.length} PNW edible mushroom species</p>
+        <h1 className="text-2xl sm:text-3xl font-bold text-green-900 mb-1">Species Guide</h1>
+        <p className="text-green-700 text-xs sm:text-sm">{species.length} tracked taxa in the Pacific Northwest dataset</p>
       </div>
 
       <div className="flex flex-col sm:flex-row flex-wrap gap-3 items-start sm:items-center">
@@ -73,8 +73,8 @@ export default function SpeciesPage() {
         <div className="flex gap-2 flex-wrap">
           {[
             { value: 'all', label: 'All' },
-            { value: 'in-season', label: '🌿 In Season' },
-            { value: 'choice', label: '⭐ Choice Edible' }
+            { value: 'in-season', label: 'In Season' },
+            { value: 'choice', label: 'Choice Edible' }
           ].map(f => (
             <button
               key={f.value}
