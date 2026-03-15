@@ -20,6 +20,12 @@ DEFAULT_DELAY_SECONDS = 1.1
 DEFAULT_MAX_RECORDS = 4000
 DEFAULT_MAX_PAGES = 60
 DEFAULT_ICONIC_TAXA = "Fungi"
+PNW_BOUNDS = {
+    "min_latitude": 41.95,
+    "max_latitude": 49.05,
+    "min_longitude": -124.9,
+    "max_longitude": -116.35,
+}
 
 
 def resolve_default_cache_db() -> Path:
@@ -58,6 +64,7 @@ def load_observations_from_dashboard_cache(
     taxon_ids: tuple[int, ...],
     quality_grades: tuple[str, ...],
     max_records: int,
+    enforce_pnw_bounds: bool,
 ) -> list[dict]:
     if not Path(db_path).exists():
         return []
@@ -74,6 +81,19 @@ def load_observations_from_dashboard_cache(
         placeholders = ",".join(["?"] * len(quality_grades))
         clauses.append(f"quality_grade IN ({placeholders})")
         params.extend(quality_grades)
+
+    if enforce_pnw_bounds:
+        clauses.append(
+            "((latitude IS NULL OR longitude IS NULL) OR (latitude BETWEEN ? AND ? AND longitude BETWEEN ? AND ?))"
+        )
+        params.extend(
+            [
+                PNW_BOUNDS["min_latitude"],
+                PNW_BOUNDS["max_latitude"],
+                PNW_BOUNDS["min_longitude"],
+                PNW_BOUNDS["max_longitude"],
+            ]
+        )
 
     where_sql = " AND ".join(clauses)
     query = f"""
@@ -148,6 +168,31 @@ def parse_observation(obs: dict) -> dict:
         "user_login": (obs.get("user") or {}).get("login") or "",
         "url": f"https://www.inaturalist.org/observations/{obs.get('id')}",
     }
+
+
+def in_pnw_bounds(latitude: object, longitude: object) -> bool:
+    try:
+        lat = float(latitude)
+        lon = float(longitude)
+    except (TypeError, ValueError):
+        return False
+    return (
+        PNW_BOUNDS["min_latitude"] <= lat <= PNW_BOUNDS["max_latitude"]
+        and PNW_BOUNDS["min_longitude"] <= lon <= PNW_BOUNDS["max_longitude"]
+    )
+
+
+def filter_records_by_pnw_bounds(records: list[dict]) -> tuple[list[dict], int]:
+    filtered: list[dict] = []
+    removed = 0
+    for row in records:
+        lat = row.get("latitude")
+        lon = row.get("longitude")
+        if lat is None or lon is None or in_pnw_bounds(lat, lon):
+            filtered.append(row)
+        else:
+            removed += 1
+    return filtered, removed
 
 
 def fetch_observations(
@@ -321,6 +366,11 @@ with st.sidebar:
     max_records = st.slider("Max records", min_value=500, max_value=20000, value=DEFAULT_MAX_RECORDS, step=500)
     max_pages = st.slider("Max chained pages per chunk", min_value=5, max_value=250, value=DEFAULT_MAX_PAGES, step=5)
     delay_seconds = st.slider("Request delay (seconds)", min_value=0.0, max_value=2.0, value=DEFAULT_DELAY_SECONDS, step=0.1)
+    enforce_pnw_bounds = st.checkbox(
+        "Enforce PNW coordinate bounds",
+        value=True,
+        help="Filters out rows with coordinates outside Oregon/Washington bounds.",
+    )
 
     if st.button("Clear Streamlit cache"):
         st.cache_data.clear()
@@ -344,6 +394,7 @@ if data_source.startswith("Dashboard SQLite"):
             taxon_ids=tuple(taxon_ids),
             quality_grades=tuple(quality),
             max_records=max_records,
+            enforce_pnw_bounds=enforce_pnw_bounds,
         )
         meta = {
             "query_count": 0,
@@ -367,6 +418,12 @@ else:
         )
         meta["source"] = "inat_api"
 
+if enforce_pnw_bounds:
+    records, removed_out_of_region = filter_records_by_pnw_bounds(records)
+    meta["removed_out_of_region"] = removed_out_of_region
+else:
+    meta["removed_out_of_region"] = 0
+
 df = pd.DataFrame.from_records(records)
 if not df.empty:
     df["observed_on"] = pd.to_datetime(df["observed_on"], errors="coerce")
@@ -388,6 +445,9 @@ if meta.get("truncated"):
     st.warning(
         "Result set was truncated by max records or max pages. Increase limits if you need full history."
     )
+
+if meta.get("removed_out_of_region"):
+    st.info(f"Filtered out {meta['removed_out_of_region']:,} out-of-region observations using PNW bounds.")
 
 date_min = df["observed_on"].min()
 date_max = df["observed_on"].max()

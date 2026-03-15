@@ -13,7 +13,9 @@ import {
   getAllObservations,
   getRollingObservationReport,
   getRecentWindowSummary,
-  getCacheStatus
+  getCacheStatus,
+  getOutOfRegionSummary,
+  pruneOutOfRegionObservations
 } from './cache.js';
 import { syncSpecies, fetchTaxonDetails, fetchLivePnwWeeklyReport } from './api.js';
 import { PNW_PLACE_IDS } from './species.js';
@@ -127,8 +129,9 @@ app.get('/api/stats', (_req, res) => {
 app.get('/api/heatmap', (req, res) => {
   try {
     const taxonId = req.query.taxon_id ? parseInt(req.query.taxon_id) : null;
-    const points = getHeatmapData(taxonId);
-    res.json({ points, count: points.length });
+    const onlyPnw = req.query.only_pnw !== 'false';
+    const points = getHeatmapData(taxonId, onlyPnw);
+    res.json({ points, count: points.length, onlyPnw });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -193,6 +196,23 @@ app.get('/api/observations', (req, res) => {
 app.get('/api/cache/status', (_req, res) => {
   try {
     res.json(getCacheStatus());
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.get('/api/cache/out-of-region', (_req, res) => {
+  try {
+    res.json(getOutOfRegionSummary());
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/api/cache/prune-out-of-region', (_req, res) => {
+  try {
+    const result = pruneOutOfRegionObservations();
+    res.json({ status: 'ok', ...result });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

@@ -2,6 +2,7 @@ import Database from 'better-sqlite3';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { PNW_BOUNDS } from './location-filter.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const DB_PATH = path.join(__dirname, '..', 'data', 'cache.db');
@@ -144,10 +145,17 @@ function updateSyncStatus(taxonId, totalFetched, pageCount) {
   ).run(taxonId, Math.floor(Date.now() / 1000), totalFetched, pageCount);
 }
 
-function getHeatmapData(taxonId) {
+function getHeatmapData(taxonId, onlyPnw = true) {
+  const pnwClause = onlyPnw
+    ? ` AND latitude BETWEEN ${PNW_BOUNDS.minLatitude} AND ${PNW_BOUNDS.maxLatitude}
+        AND longitude BETWEEN ${PNW_BOUNDS.minLongitude} AND ${PNW_BOUNDS.maxLongitude}`
+    : '';
   const query = taxonId
-    ? 'SELECT latitude, longitude FROM observations WHERE taxon_id = ? AND latitude IS NOT NULL AND longitude IS NOT NULL'
-    : 'SELECT latitude, longitude FROM observations WHERE latitude IS NOT NULL AND longitude IS NOT NULL';
+    ? `SELECT latitude, longitude FROM observations
+       WHERE taxon_id = ?
+       AND latitude IS NOT NULL AND longitude IS NOT NULL${pnwClause}`
+    : `SELECT latitude, longitude FROM observations
+       WHERE latitude IS NOT NULL AND longitude IS NOT NULL${pnwClause}`;
   const params = taxonId ? [taxonId] : [];
   return db.prepare(query).all(...params);
 }
@@ -263,6 +271,82 @@ function getCacheStatus() {
   };
 }
 
+function getOutOfRegionSummary() {
+  const total = db.prepare('SELECT COUNT(*) as count FROM observations').get()?.count || 0;
+  const withCoordinates = db.prepare(
+    'SELECT COUNT(*) as count FROM observations WHERE latitude IS NOT NULL AND longitude IS NOT NULL'
+  ).get()?.count || 0;
+
+  const outOfRegion = db.prepare(
+    `SELECT COUNT(*) as count
+     FROM observations
+     WHERE latitude IS NOT NULL AND longitude IS NOT NULL
+       AND NOT (
+         latitude BETWEEN ? AND ?
+         AND longitude BETWEEN ? AND ?
+       )`
+  ).get(
+    PNW_BOUNDS.minLatitude,
+    PNW_BOUNDS.maxLatitude,
+    PNW_BOUNDS.minLongitude,
+    PNW_BOUNDS.maxLongitude
+  )?.count || 0;
+
+  const inRegion = Math.max(withCoordinates - outOfRegion, 0);
+  const noCoordinates = Math.max(total - withCoordinates, 0);
+
+  const samples = db.prepare(
+    `SELECT id, taxon_id, place_guess, latitude, longitude, observed_on
+     FROM observations
+     WHERE latitude IS NOT NULL AND longitude IS NOT NULL
+       AND NOT (
+         latitude BETWEEN ? AND ?
+         AND longitude BETWEEN ? AND ?
+       )
+     ORDER BY observed_on DESC
+     LIMIT 20`
+  ).all(
+    PNW_BOUNDS.minLatitude,
+    PNW_BOUNDS.maxLatitude,
+    PNW_BOUNDS.minLongitude,
+    PNW_BOUNDS.maxLongitude
+  );
+
+  return {
+    bounds: PNW_BOUNDS,
+    total,
+    withCoordinates,
+    inRegion,
+    outOfRegion,
+    noCoordinates,
+    samples
+  };
+}
+
+function pruneOutOfRegionObservations() {
+  const before = getOutOfRegionSummary();
+  const result = db.prepare(
+    `DELETE FROM observations
+     WHERE latitude IS NOT NULL AND longitude IS NOT NULL
+       AND NOT (
+         latitude BETWEEN ? AND ?
+         AND longitude BETWEEN ? AND ?
+       )`
+  ).run(
+    PNW_BOUNDS.minLatitude,
+    PNW_BOUNDS.maxLatitude,
+    PNW_BOUNDS.minLongitude,
+    PNW_BOUNDS.maxLongitude
+  );
+
+  const after = getOutOfRegionSummary();
+  return {
+    deleted: result.changes || 0,
+    before,
+    after
+  };
+}
+
 export {
   initDb,
   getCached,
@@ -278,5 +362,7 @@ export {
   getRollingObservationReport,
   getRecentWindowSummary,
   getCacheStatus,
+  getOutOfRegionSummary,
+  pruneOutOfRegionObservations,
   clearCache
 };
