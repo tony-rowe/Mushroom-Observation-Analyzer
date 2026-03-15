@@ -54,6 +54,17 @@ python3 -m streamlit run streamlit/app.py
 
 See `streamlit/README.md` for details on query strategy and cache behavior.
 
+## Docker deployment
+
+`docker-compose.yml` now starts two services:
+
+- `app` on `http://<host>:3060`
+- `streamlit` on `http://<host>:8501`
+
+On Synology at hostname `desertbuddha`, Streamlit is:
+
+- `http://desertbuddha:8501`
+
 ## Data sourcing and rate limits
 
 - iNaturalist API base: `https://api.inaturalist.org/v1`

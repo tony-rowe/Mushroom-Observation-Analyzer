@@ -13,7 +13,7 @@ import {
 import { useApi } from '../hooks/useApi';
 import LoadingSpinner from '../components/LoadingSpinner';
 
-const STREAMLIT_URL = import.meta.env.VITE_STREAMLIT_URL || 'http://localhost:8501';
+const STREAMLIT_URL = import.meta.env.VITE_STREAMLIT_URL || 'http://desertbuddha:8501';
 
 export default function Reports() {
   const { data: summaryData, loading: summaryLoading, error: summaryError } = useApi('/reports/summary');

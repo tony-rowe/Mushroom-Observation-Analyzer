@@ -20,7 +20,18 @@ DEFAULT_DELAY_SECONDS = 1.1
 DEFAULT_MAX_RECORDS = 4000
 DEFAULT_MAX_PAGES = 60
 DEFAULT_ICONIC_TAXA = "Fungi"
-DASHBOARD_CACHE_DB = Path(__file__).resolve().parents[1] / "dashboard" / "data" / "cache.db"
+
+
+def resolve_default_cache_db() -> Path:
+    # Docker deployment stores cache at /app/data/cache.db.
+    docker_path = Path("/app/data/cache.db")
+    repo_path = Path(__file__).resolve().parents[1] / "dashboard" / "data" / "cache.db"
+    if docker_path.exists():
+        return docker_path
+    return repo_path
+
+
+DASHBOARD_CACHE_DB = resolve_default_cache_db()
 
 
 def parse_int_csv(text: str) -> list[int]:

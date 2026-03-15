@@ -21,6 +21,18 @@ python3 -m pip install -r requirements.txt
 python3 -m streamlit run streamlit/app.py
 ```
 
+### Run with Docker Compose
+
+From the repo root:
+
+```bash
+docker compose up -d --build streamlit
+```
+
+Default URL:
+
+- `http://desertbuddha:8501` (Synology host example)
+
 By default, the app loads tracked taxon IDs from `dashboard/server/species.js` and queries:
 
 - Oregon (`10`)
@@ -35,6 +47,6 @@ The app minimizes requests by:
 3. Combining multiple taxon IDs into a single query where URL length permits.
 4. Caching query results in Streamlit.
 
-For lowest footprint and best speed, use **Dashboard SQLite cache (fastest)** as the data source in the Streamlit sidebar. This avoids iNaturalist calls entirely for already-synced records.
+For lowest footprint and best speed, use **Dashboard SQLite cache (fastest)** as the data source in the Streamlit sidebar. In Docker deployment, this reads from `/app/data/cache.db` shared with the dashboard container.
 
 Adjust `Max records` and `Max chained pages per chunk` in the sidebar if you need deeper historical coverage.
