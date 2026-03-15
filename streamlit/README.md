@@ -21,11 +21,9 @@ python3 -m pip install -r requirements.txt
 python3 -m streamlit run streamlit/app.py
 ```
 
-By default, the app loads tracked taxon IDs from `dashboard/server/species.js` and queries PNW place IDs:
+By default, the app loads tracked taxon IDs from `dashboard/server/species.js` and queries:
 
-- Oregon (`10`)
-- Washington (`11`)
-- Idaho (`12`)
+- Flora of the Pacific Northwest boundary (`97394`)
 
 ## Notes on query efficiency
 

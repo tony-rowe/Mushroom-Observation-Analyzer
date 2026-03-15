@@ -1,5 +1,6 @@
 import { getCached, setCache } from './cache.js';
 import { getCachedPhotos, getCachedPhotoCount } from './photo-sync.js';
+import { PNW_PLACE_IDS } from './species.js';
 
 const API_BASE = 'https://api.inaturalist.org/v1';
 const PHOTO_CACHE_TTL = 86400;
@@ -38,7 +39,7 @@ async function getSpeciesPhotos(taxonId, count = 30) {
   const cached = getCached(cacheKey, PHOTO_CACHE_TTL);
   if (cached) return cached;
 
-  const placeIds = '10,11,12';
+  const placeIds = PNW_PLACE_IDS.join(',');
   const url = `${API_BASE}/observations?taxon_id=${taxonId}&place_id=${placeIds}&photos=true&quality_grade=research&per_page=${Math.min(count, 50)}&order=desc&order_by=votes`;
   const data = await rateFetch(url);
 

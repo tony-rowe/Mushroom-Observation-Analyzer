@@ -60,7 +60,7 @@ export default function Reports() {
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
         <div className="glass-card p-5 xl:col-span-2">
           <h2 className="text-lg font-semibold text-green-900 mb-1">iNaturalist rolling 7-day activity</h2>
-          <p className="text-sm text-green-700 mb-4">Daily live observations in Oregon, Washington, and Idaho for plants + fungi.</p>
+          <p className="text-sm text-green-700 mb-4">Daily live observations in the Pacific Northwest boundary for plants + fungi.</p>
           <div className="h-80">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={rollingSeries}>

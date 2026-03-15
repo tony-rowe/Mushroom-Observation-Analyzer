@@ -57,7 +57,7 @@ See `streamlit/README.md` for details on query strategy and cache behavior.
 ## Data sourcing and rate limits
 
 - iNaturalist API base: `https://api.inaturalist.org/v1`
-- PNW defaults: Oregon (`10`), Washington (`11`), Idaho (`12`)
+- PNW defaults: Flora of the Pacific Northwest boundary (`97394`)
 - Server-side iNat requests are rate-limited to ~1.1 seconds between calls
 - Dashboard sync now supports batched, chained retrieval across many taxa to reduce total request count
 
