@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import {
   ResponsiveContainer,
   LineChart,
@@ -12,17 +12,23 @@ import {
 } from 'recharts';
 import { useApi } from '../hooks/useApi';
 import LoadingSpinner from '../components/LoadingSpinner';
+import { apiPost } from '../hooks/useApi';
 
 const STREAMLIT_URL = import.meta.env.VITE_STREAMLIT_URL || 'http://desertbuddha:8501';
 
 export default function Reports() {
-  const { data: summaryData, loading: summaryLoading, error: summaryError } = useApi('/reports/summary');
+  const { data: summaryData, loading: summaryLoading, error: summaryError, refetch: refetchSummary } = useApi('/reports/summary');
   const { data: liveData, loading: liveLoading, error: liveError } = useApi('/reports/live-weekly');
+  const { data: outOfRegionData, loading: outOfRegionLoading, refetch: refetchOutOfRegion } = useApi('/cache/out-of-region');
+  const [pruning, setPruning] = useState(false);
+  const [pruneMessage, setPruneMessage] = useState('');
 
   const rollingSeries = liveData?.histogram || [];
   const topSpecies = liveData?.topSpecies || [];
   const total7d = liveData?.totalObservations || 0;
   const cache = summaryData?.cache || {};
+  const outOfRegionCount = outOfRegionData?.outOfRegion || 0;
+  const outOfRegionSample = outOfRegionData?.samples?.slice(0, 3) || [];
 
   const avgPerDay = useMemo(() => {
     if (!total7d) return 0;
@@ -40,6 +46,21 @@ export default function Reports() {
 
   if (summaryLoading || liveLoading) return <LoadingSpinner message="Loading reporting data..." />;
   if (summaryError || liveError) return <p className="text-red-600 text-sm">Failed to load reports: {summaryError || liveError}</p>;
+
+  const handlePrune = async () => {
+    setPruning(true);
+    setPruneMessage('');
+    try {
+      const result = await apiPost('/cache/prune-out-of-region');
+      const deleted = result?.deleted || 0;
+      setPruneMessage(deleted > 0 ? `Pruned ${deleted.toLocaleString()} out-of-region observations.` : 'No out-of-region observations needed pruning.');
+      await Promise.all([refetchOutOfRegion(), refetchSummary()]);
+    } catch (err) {
+      setPruneMessage(`Prune failed: ${err.message || 'Unknown error'}`);
+    } finally {
+      setPruning(false);
+    }
+  };
 
   return (
     <div className="fade-in space-y-6">
@@ -135,6 +156,33 @@ export default function Reports() {
             <p><strong>DB size:</strong> {cache.dbSizeMb ?? 0} MB</p>
             <p><strong>Synced taxa:</strong> {cache.syncedTaxa ?? 0}</p>
             <p><strong>Latest cached observation:</strong> {cache.latestObservation || 'n/a'}</p>
+            <p><strong>Out-of-region points:</strong> {outOfRegionLoading ? '...' : outOfRegionCount.toLocaleString()}</p>
+          </div>
+          <div className="mt-3 p-3 rounded-lg bg-green-50 border border-green-200">
+            <p className="text-sm text-green-900 font-medium">PNW bounds cleanup</p>
+            <p className="text-xs text-green-700 mt-1">
+              Removes cached observations with coordinates outside Oregon/Washington bounds.
+            </p>
+            <button
+              onClick={handlePrune}
+              disabled={pruning || outOfRegionLoading}
+              className="btn-primary mt-3 text-xs"
+            >
+              {pruning ? 'Pruning…' : 'Prune out-of-region observations'}
+            </button>
+            {pruneMessage && <p className="text-xs text-green-700 mt-2">{pruneMessage}</p>}
+            {outOfRegionSample.length > 0 && (
+              <div className="mt-2 text-[11px] text-green-700">
+                <p className="font-medium text-green-900">Sample outliers:</p>
+                <ul className="list-disc ml-4">
+                  {outOfRegionSample.map((row) => (
+                    <li key={row.id}>
+                      #{row.id} ({row.latitude?.toFixed?.(2)}, {row.longitude?.toFixed?.(2)}) {row.place_guess || 'Unknown place'}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </div>
           <div className="mt-4 p-3 rounded-lg bg-green-50 border border-green-200">
             <p className="text-sm text-green-900 font-medium">Streamlit reports are integrated as a companion app.</p>

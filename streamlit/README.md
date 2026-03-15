@@ -8,6 +8,7 @@ This dashboard provides reporting-focused access to iNaturalist observations acr
 - Optional batching of many taxon IDs into a small number of requests
 - Streamlit cache (1 hour TTL) to prevent unnecessary repeat API calls
 - Optional read-through from dashboard SQLite cache (`dashboard/data/cache.db`) for zero-API reporting
+- Optional PNW coordinate-bounds enforcement to suppress stale out-of-region cache rows
 - Rolling 7-day report with week-over-week momentum by taxon
 - Built-in query diagnostics (request count, date range, truncation warning)
 - CSV export for downstream analysis
