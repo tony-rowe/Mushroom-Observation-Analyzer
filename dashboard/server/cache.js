@@ -1,4 +1,5 @@
 import Database from 'better-sqlite3';
+import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -155,6 +156,113 @@ function clearCache() {
   db.exec('DELETE FROM api_cache');
 }
 
+function getRollingObservationReport(days = 35, window = 7, taxonId = null) {
+  const safeDays = Math.max(7, Math.min(days, 365));
+  const safeWindow = Math.max(2, Math.min(window, safeDays));
+
+  const params = [];
+  let where = `observed_on IS NOT NULL AND date(observed_on) >= date('now', '-${safeDays - 1} days')`;
+  if (taxonId) {
+    where += ' AND taxon_id = ?';
+    params.push(taxonId);
+  }
+
+  const rows = db.prepare(
+    `SELECT date(observed_on) as day, COUNT(*) as count
+     FROM observations
+     WHERE ${where}
+     GROUP BY day
+     ORDER BY day ASC`
+  ).all(...params);
+
+  const countByDay = new Map(rows.map(r => [r.day, r.count]));
+  const startDate = new Date();
+  startDate.setHours(0, 0, 0, 0);
+  startDate.setDate(startDate.getDate() - (safeDays - 1));
+
+  const series = [];
+  const rollingBuffer = [];
+  let rollingTotal = 0;
+  for (let i = 0; i < safeDays; i++) {
+    const current = new Date(startDate);
+    current.setDate(startDate.getDate() + i);
+    const day = current.toISOString().slice(0, 10);
+    const count = countByDay.get(day) || 0;
+
+    rollingBuffer.push(count);
+    rollingTotal += count;
+    if (rollingBuffer.length > safeWindow) {
+      rollingTotal -= rollingBuffer.shift();
+    }
+
+    series.push({
+      day,
+      count,
+      rolling: rollingTotal,
+      rollingWindow: safeWindow
+    });
+  }
+
+  return { days: safeDays, window: safeWindow, series };
+}
+
+function getRecentWindowSummary(days = 7, taxonId = null) {
+  const safeDays = Math.max(1, Math.min(days, 90));
+  const params = [];
+  let where = `observed_on IS NOT NULL AND date(observed_on) >= date('now', '-${safeDays - 1} days')`;
+  if (taxonId) {
+    where += ' AND taxon_id = ?';
+    params.push(taxonId);
+  }
+
+  const total = db.prepare(
+    `SELECT COUNT(*) as count
+     FROM observations
+     WHERE ${where}`
+  ).get(...params)?.count || 0;
+
+  const byQuality = db.prepare(
+    `SELECT quality_grade, COUNT(*) as count
+     FROM observations
+     WHERE ${where}
+     GROUP BY quality_grade
+     ORDER BY count DESC`
+  ).all(...params);
+
+  const topTaxa = db.prepare(
+    `SELECT taxon_id, COUNT(*) as count
+     FROM observations
+     WHERE ${where}
+     GROUP BY taxon_id
+     ORDER BY count DESC
+     LIMIT 15`
+  ).all(...params);
+
+  return { days: safeDays, total, byQuality, topTaxa };
+}
+
+function getCacheStatus() {
+  const observations = db.prepare('SELECT COUNT(*) as count FROM observations').get()?.count || 0;
+  const trackedTaxa = db.prepare('SELECT COUNT(DISTINCT taxon_id) as count FROM observations').get()?.count || 0;
+  const apiEntries = db.prepare('SELECT COUNT(*) as count FROM api_cache').get()?.count || 0;
+  const syncedTaxa = db.prepare('SELECT COUNT(*) as count FROM sync_status').get()?.count || 0;
+  const latestObservation = db.prepare('SELECT MAX(observed_on) as observed_on FROM observations').get()?.observed_on || null;
+  const latestSyncEpoch = db.prepare('SELECT MAX(last_sync) as last_sync FROM sync_status').get()?.last_sync || null;
+  const dbSizeBytes = fs.existsSync(DB_PATH) ? fs.statSync(DB_PATH).size : 0;
+
+  return {
+    dbPath: DB_PATH,
+    dbSizeBytes,
+    dbSizeMb: Number((dbSizeBytes / (1024 * 1024)).toFixed(2)),
+    observations,
+    trackedTaxa,
+    apiEntries,
+    syncedTaxa,
+    latestObservation,
+    latestSync: latestSyncEpoch ? new Date(latestSyncEpoch * 1000).toISOString() : null
+  };
+}
+
 export {
   initDb,
   getCached,
@@ -167,5 +275,8 @@ export {
   getSyncStatus,
   updateSyncStatus,
   getHeatmapData,
+  getRollingObservationReport,
+  getRecentWindowSummary,
+  getCacheStatus,
   clearCache
 };

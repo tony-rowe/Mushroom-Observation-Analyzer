@@ -75,7 +75,7 @@ export default function SpeciesDetail() {
               />
             ) : (
               <div className="w-48 h-48 rounded-2xl bg-green-900/30 flex items-center justify-center text-6xl border-2 border-green-800/30">
-                {species.emoji}
+                {species.commonName?.charAt(0) || 'S'}
               </div>
             )}
           </div>
@@ -88,11 +88,11 @@ export default function SpeciesDetail() {
               <div className="flex gap-2">
                 {isInSeason && (
                   <span className={`stat-badge ${isPeak ? 'pulse-glow !border-mushroom-gold/60 !text-mushroom-gold' : ''}`}>
-                    {isPeak ? '🔥 Peak Season' : '🌿 In Season'}
+                    {isPeak ? 'Peak Season' : 'In Season'}
                   </span>
                 )}
                 <button onClick={handleSync} disabled={syncing} className="btn-primary text-xs">
-                  {syncing ? 'Syncing...' : '🔄 Refresh'}
+                  {syncing ? 'Syncing...' : 'Refresh'}
                 </button>
               </div>
             </div>
@@ -200,7 +200,7 @@ export default function SpeciesDetail() {
                   <img src={obs.photo_url} alt="" className="w-12 h-12 rounded-lg object-cover flex-shrink-0" />
                 ) : (
                   <div className="w-12 h-12 rounded-lg bg-green-900/40 flex items-center justify-center text-xl flex-shrink-0">
-                    {species.emoji}
+                    {species.commonName?.charAt(0) || 'S'}
                   </div>
                 )}
                 <div className="flex-1 min-w-0">

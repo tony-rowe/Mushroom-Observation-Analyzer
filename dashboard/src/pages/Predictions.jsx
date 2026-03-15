@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { MapContainer, TileLayer, GeoJSON, useMap, Tooltip } from 'react-leaflet';
 import L from 'leaflet';
 import { useApi } from '../hooks/useApi';
@@ -28,10 +28,10 @@ function scoreBg(score) {
 
 function confidenceLabel(c) {
   switch (c) {
-    case 'very-high': return '🔥 Go Now';
-    case 'high': return '✅ Strong';
-    case 'moderate': return '🟡 Possible';
-    default: return '⬜ Low';
+    case 'very-high': return 'Very High';
+    case 'high': return 'High';
+    case 'moderate': return 'Moderate';
+    default: return 'Low';
   }
 }
 
@@ -135,11 +135,11 @@ export default function Predictions() {
     <div className="fade-in space-y-6">
       <div className="flex items-start justify-between flex-wrap gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-white mb-1">🔮 Foraging Forecast</h1>
+          <h1 className="text-3xl font-bold text-white mb-1">Regional Forecast</h1>
           <p className="text-gray-500 text-sm">
             {selectedSpeciesObj
-              ? `${selectedSpeciesObj.emoji} ${selectedSpeciesObj.commonName} predictions for ${MONTH_FULL[month - 1]}`
-              : `Where to go in ${MONTH_FULL[month - 1]} — Oregon foraging zones scored by species`
+              ? `${selectedSpeciesObj.commonName} predictions for ${MONTH_FULL[month - 1]}`
+              : `Regional suitability model for ${MONTH_FULL[month - 1]}`
             }
           </p>
         </div>
@@ -166,9 +166,8 @@ export default function Predictions() {
       {heroRec && !selectedSpecies && (
         <div className="glass-card p-5 border-mushroom-gold/30 pulse-glow">
           <div className="flex items-center gap-3 mb-2">
-            <span className="text-2xl">{heroRec.species.emoji}</span>
             <div>
-              <p className="text-xs text-mushroom-gold uppercase font-mono tracking-widest">Top Pick for {MONTH_FULL[month - 1]}</p>
+              <p className="text-xs text-mushroom-gold uppercase font-mono tracking-widest">Top Recommendation for {MONTH_FULL[month - 1]}</p>
               <h2 className="text-xl font-bold text-white">{heroRec.species.commonName} — {heroRec.region.name}</h2>
             </div>
             <div className="ml-auto text-right">
@@ -177,7 +176,7 @@ export default function Predictions() {
             </div>
           </div>
           <p className="text-sm text-gray-400">{heroRec.tip}</p>
-          <p className="text-xs text-green-600 mt-2">📍 {heroRec.accessTip}</p>
+          <p className="text-xs text-green-600 mt-2">{heroRec.accessTip}</p>
         </div>
       )}
 
@@ -194,11 +193,10 @@ export default function Predictions() {
           <button
             key={s.id}
             onClick={() => { setSelectedSpecies(s.id === selectedSpecies ? null : s.id); setSelectedRegion(null); }}
-            className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-all flex items-center gap-1 ${
+            className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-all ${
               selectedSpecies === s.id ? 'bg-mushroom-gold text-black' : 'bg-green-900/40 text-gray-400 hover:text-white'
             }`}
           >
-            <span>{s.emoji}</span>
             <span className="hidden lg:inline">{s.commonName.split(' ').slice(-1)[0]}</span>
           </button>
         ))}
@@ -274,18 +272,15 @@ function TopPicksList({ picks, loading, month }) {
   const good = picks.filter(p => p.score >= 35);
   return (
     <div className="glass-card p-4 max-h-[580px] overflow-y-auto">
-      <h3 className="text-sm font-semibold text-white mb-3">🏆 Top Picks — {MONTH_FULL[month - 1]}</h3>
-      {good.length === 0 && <p className="text-xs text-gray-600">Slim pickings this month! Most species are dormant.</p>}
+      <h3 className="text-sm font-semibold text-white mb-3">Top Recommendations — {MONTH_FULL[month - 1]}</h3>
+      {good.length === 0 && <p className="text-xs text-gray-600">No high-confidence recommendations for this month.</p>}
       <div className="space-y-2">
         {good.map((p, i) => (
           <div key={i} className="p-3 rounded-xl transition-all" style={{ background: scoreBg(p.score) }}>
             <div className="flex items-center justify-between mb-1">
-              <div className="flex items-center gap-2">
-                <span>{p.species.emoji}</span>
-                <div>
-                  <p className="text-xs font-semibold text-white">{p.species.commonName}</p>
-                  <p className="text-[10px] text-gray-500">{p.region.name}</p>
-                </div>
+              <div>
+                <p className="text-xs font-semibold text-white">{p.species.commonName}</p>
+                <p className="text-[10px] text-gray-500">{p.region.name}</p>
               </div>
               <div className="text-right">
                 <p className="text-sm font-bold" style={{ color: scoreColor(p.score) }}>{p.score}</p>
@@ -306,7 +301,7 @@ function SpeciesRegionList({ predictions, species, onRegionClick }) {
   return (
     <div className="glass-card p-4 max-h-[580px] overflow-y-auto">
       <h3 className="text-sm font-semibold text-white mb-1">
-        {species?.emoji} {species?.commonName}
+        {species?.commonName}
       </h3>
       <p className="text-[10px] text-gray-500 mb-3">Ranked by foraging potential across Oregon zones</p>
       <div className="space-y-2">
@@ -350,10 +345,7 @@ function RegionDetailPanel({ regionDetail, selectedRegion, month, onClose }) {
         {good.map(p => (
           <div key={p.speciesId} className="p-3 rounded-xl" style={{ background: scoreBg(p.score) }}>
             <div className="flex items-center justify-between mb-1">
-              <div className="flex items-center gap-2">
-                <span>{p.species.emoji}</span>
-                <p className="text-xs font-semibold text-white">{p.species.commonName}</p>
-              </div>
+              <p className="text-xs font-semibold text-white">{p.species.commonName}</p>
               <span className="text-sm font-bold" style={{ color: scoreColor(p.score) }}>{p.score}</span>
             </div>
             <div className="space-y-0.5">
@@ -365,7 +357,7 @@ function RegionDetailPanel({ regionDetail, selectedRegion, month, onClose }) {
               <FactorBar label="History" score={p.factors.historical.score} maxScore={10} />
             </div>
             {p.tip && <p className="text-[10px] text-gray-500 mt-2 leading-relaxed">{p.tip}</p>}
-            {p.accessTip && <p className="text-[10px] text-green-600 mt-1">📍 {p.accessTip}</p>}
+            {p.accessTip && <p className="text-[10px] text-green-600 mt-1">{p.accessTip}</p>}
           </div>
         ))}
       </div>

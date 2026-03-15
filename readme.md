@@ -1,201 +1,95 @@
-# 🍄 Mushroom Observer
+# PNW Observation Platform
 
-[![Python](https://img.shields.io/badge/Python-3.8%2B-blue.svg)](https://www.python.org/downloads/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![iNaturalist](https://img.shields.io/badge/Data-iNaturalist-green.svg)](https://www.inaturalist.org/)
+This repository contains tools for collecting, analyzing, and reporting iNaturalist observations for Pacific Northwest taxa.
 
-A powerful tool for tracking and analyzing mushroom observations using iNaturalist data. Monitor seasonal patterns, generate detailed reports, and visualize mushroom distributions with interactive heatmaps.
+## Repository components
 
-## ✨ Features
+### 1) Legacy CLI (`LCF.py`)
 
-- 🗺️ Interactive heatmaps showing observation distributions
-- 📊 Detailed monthly statistics and quality grade analysis
-- 🔮 Seasonal prediction system for mushroom appearances
-- 📈 Historical data tracking and trend analysis
-- 🔄 Automated data updates with manual override options
-- 📑 Comprehensive HTML reports with visualizations
-- 💾 Efficient data caching system
-
-## 🚀 Getting Started
-
-### Prerequisites
+A single-file Python CLI for tracking mushroom observations and generating reports.
 
 ```bash
-python -m pip install -r requirements.txt
+python3 LCF.py
 ```
 
-### Installation
+Quick validation:
 
-1. Clone the repository:
 ```bash
-git clone https://github.com/yourusername/mushroom-observer.git
-cd mushroom-observer
+python3 -m py_compile LCF.py
+python3 -m pyflakes LCF.py
 ```
 
-2. Install dependencies:
+### 2) Web Dashboard (`dashboard/`)
+
+A React + Express application for operational monitoring, maps, forecasting, and species management.
+
 ```bash
-pip install -r requirements.txt
+cd dashboard
+npm install
+npm run dev
 ```
 
-3. Configure the application (see Configuration section)
+Other useful commands:
 
-4. Run the application:
 ```bash
-python mushroom_observer.py
+npm run dev:server
+npm run dev:client
+npm run lint
+npm run build
 ```
 
-## 🔧 Configuration
+In-app reporting center:
 
-### Essential Settings
-The following variables can be modified in the script to customize the application:
+- Open the **Reports** section in the dashboard sidebar for rolling 7-day trends and cache status.
+- Cache location: `dashboard/data/cache.db`
 
-```python
-# Location Settings
-PLACE_IDS = [10]  # Default: Oregon (10)
-# Find your place ID at: https://www.inaturalist.org/places/
-# Common Place IDs:
-# - Oregon: 10
-# - Washington: 11
-# - California: 14
-# Multiple areas can be added: PLACE_IDS = [10, 11, 14]
+### 3) Streamlit Reporting (`streamlit/app.py`)
 
-# Map Display Settings
-DEFAULT_MAP_CENTER = [43.8041, -120.5542]  # Default: Oregon center
-# Format: [latitude, longitude]
-# Common centers:
-# - Oregon: [43.8041, -120.5542]
-# - Washington: [47.7511, -120.7401]
-# - California: [36.7783, -119.4179]
+A reporting-oriented Streamlit dashboard that pulls iNaturalist observations with query-efficient chained pagination.
 
-# API Settings
-API_RATE_LIMIT = 0.5  # Seconds between requests
-API_BASE_URL = 'https://api.inaturalist.org/v1'
-
-# Cache Settings
-CACHE_TIMEOUT = 43200  # 12 hours in seconds
-DATA_DIR = 'mushroom_data'  # Cache directory
+```bash
+python3 -m pip install -r requirements.txt
+python3 -m streamlit run streamlit/app.py
 ```
 
-### Search Area Configuration
-To modify the search area:
-1. Visit [iNaturalist Places](https://www.inaturalist.org/places/)
-2. Search for your desired location
-3. The place ID is in the URL (e.g., `/places/10` for Oregon)
-4. Update `PLACE_IDS` with your desired location(s)
+See `streamlit/README.md` for details on query strategy and cache behavior.
 
-### Map Center Configuration
-To change the default map center:
-1. Find your desired coordinates using [Google Maps](https://www.google.com/maps)
-2. Right-click on the location and copy the coordinates
-3. Update `DEFAULT_MAP_CENTER` with [latitude, longitude]
+## Data sourcing and rate limits
 
-### API Configuration
-The application uses the iNaturalist API v1. By default, it:
-- Respects rate limits (0.5 seconds between requests)
-- Caches data for 12 hours
-- Uses the public API endpoint
+- iNaturalist API base: `https://api.inaturalist.org/v1`
+- PNW defaults: Oregon (`10`), Washington (`11`), Idaho (`12`)
+- Server-side iNat requests are rate-limited to ~1.1 seconds between calls
+- Dashboard sync now supports batched, chained retrieval across many taxa to reduce total request count
 
-To modify API behavior:
-1. Adjust `API_RATE_LIMIT` for faster/slower requests
-2. Change `CACHE_TIMEOUT` for different cache duration
-3. Update `API_BASE_URL` if endpoint changes
+## Installation
 
-## 📝 Usage Guide
+### Python dependencies
 
-### Adding Mushrooms
-1. Select "Add Mushroom" from the main menu
-2. You'll need:
-   - Mushroom name (for your reference)
-   - iNaturalist taxon ID
-   
-To find a taxon ID:
-1. Search for the species on [iNaturalist](https://www.inaturalist.org)
-2. The taxon ID is in the URL (e.g., `/taxa/48978`)
+```bash
+python3 -m pip install -r requirements.txt
+```
 
-### Generating Reports
-Individual Reports:
-1. Select "Generate Report"
-2. Choose a mushroom
-3. Report includes:
-   - Heatmap of observations
-   - Monthly statistics
-   - Quality grade distribution
-   - Seasonal predictions
+### Dashboard dependencies
 
-Consolidated Reports:
-1. Select "Generate Consolidated Report"
-2. Includes all tracked mushrooms in one report
+```bash
+cd dashboard
+npm install
+```
 
-### Data Management
-Update Options:
-- "Update All Data": Updates all mushrooms
-- "Manual Update": Force update single mushroom
-- "Purge Cache": Clear all cached data
+## Project layout
 
-Cache System:
-- Data is cached in `DATA_DIR`
-- Each mushroom has its own cache file
-- Cache expires based on `CACHE_TIMEOUT`
+```text
+.
+├── LCF.py
+├── dashboard/
+│   ├── server/
+│   └── src/
+├── streamlit/
+│   ├── app.py
+│   └── README.md
+└── requirements.txt
+```
 
-## 📊 Report Features
+## License
 
-### Heatmap
-- Shows observation density
-- Interactive zoom and pan
-- Color intensity indicates observation frequency
-
-### Statistics
-- Monthly observation totals
-- Quality grade distribution
-- Historical trends
-- Year-over-year comparisons
-
-### Seasonal Predictions
-- Based on historical data
-- Shows likely appearance times
-- Includes confidence levels
-
-## 🚦 Troubleshooting
-
-Common Issues:
-1. **No Data Loading**
-   - Check internet connection
-   - Verify taxon ID exists
-   - Ensure place ID is correct
-
-2. **Slow Performance**
-   - Check `API_RATE_LIMIT`
-   - Verify internet speed
-   - Consider reducing search area
-
-3. **Map Not Displaying**
-   - Check coordinates in `DEFAULT_MAP_CENTER`
-   - Verify data exists for location
-   - Check browser compatibility
-
-## 📦 Dependencies
-
-- folium (mapping)
-- pandas (data analysis)
-- requests (API calls)
-- rich (terminal interface)
-- plotly (data visualization)
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
-
-## 📜 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## 🙏 Acknowledgments
-
-- Data provided by [iNaturalist](https://www.inaturalist.org/)
-- Mapping functionality powered by [Folium](https://python-visualization.github.io/folium/)
-- Terminal interface created with [Rich](https://rich.readthedocs.io/)
-- Created using [Claude] (https://claude.ai)
+MIT

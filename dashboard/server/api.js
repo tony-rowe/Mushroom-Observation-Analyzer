@@ -9,6 +9,7 @@ const CACHE_TTL = 6 * 3600;
 const SYNC_COOLDOWN = 3600;
 const MAX_PER_PAGE = 200;
 const MAX_PAGES = 10;
+const MAX_BATCH_PAGES = 120;
 
 let lastRequestTime = 0;
 
@@ -32,7 +33,31 @@ async function rateLimitedFetch(url) {
 
 async function fetchObservationsPage(taxonId, page = 1, perPage = MAX_PER_PAGE) {
   const placeIds = PNW_PLACE_IDS.join(',');
-  const url = `${API_BASE}/observations?taxon_id=${taxonId}&place_id=${placeIds}&per_page=${perPage}&page=${page}&order=desc&order_by=observed_on&quality_grade=research,needs_id`;
+  const query = new URLSearchParams({
+    taxon_id: String(taxonId),
+    place_id: placeIds,
+    per_page: String(perPage),
+    page: String(page),
+    order: 'desc',
+    order_by: 'observed_on',
+    quality_grade: 'research,needs_id'
+  });
+  const url = `${API_BASE}/observations?${query.toString()}`;
+  return rateLimitedFetch(url);
+}
+
+async function fetchObservationsBatchPage(taxonIds, idBelow = null, perPage = MAX_PER_PAGE) {
+  const placeIds = PNW_PLACE_IDS.join(',');
+  const query = new URLSearchParams({
+    taxon_id: taxonIds.join(','),
+    place_id: placeIds,
+    per_page: String(perPage),
+    order: 'desc',
+    order_by: 'id',
+    quality_grade: 'research,needs_id'
+  });
+  if (idBelow) query.set('id_below', String(idBelow));
+  const url = `${API_BASE}/observations?${query.toString()}`;
   return rateLimitedFetch(url);
 }
 
@@ -95,6 +120,116 @@ async function syncSpecies(taxonId, force = false) {
   }
 }
 
+async function syncSpeciesBatch(taxonIds, force = false) {
+  const uniqueTaxonIds = [...new Set((taxonIds || []).map(id => parseInt(id, 10)).filter(Boolean))];
+  if (uniqueTaxonIds.length === 0) {
+    return {
+      synced: false,
+      cached: true,
+      total: 0,
+      totalAvailable: 0,
+      pageCount: 0,
+      truncated: false,
+      perTaxon: []
+    };
+  }
+
+  const now = Math.floor(Date.now() / 1000);
+  const staleTaxa = [];
+  const cachedTaxa = [];
+
+  for (const taxonId of uniqueTaxonIds) {
+    const status = getSyncStatus(taxonId);
+    if (!force && status && (now - status.last_sync) < SYNC_COOLDOWN) {
+      cachedTaxa.push({ taxonId, synced: false, cached: true, total: status.total_fetched });
+    } else {
+      staleTaxa.push(taxonId);
+    }
+  }
+
+  if (staleTaxa.length === 0) {
+    return {
+      synced: false,
+      cached: true,
+      total: 0,
+      totalAvailable: 0,
+      pageCount: 0,
+      truncated: false,
+      perTaxon: cachedTaxa
+    };
+  }
+
+  let allObs = [];
+  let page = 0;
+  let idBelow = null;
+  let totalResults = 0;
+  let truncated = false;
+
+  try {
+    while (page < MAX_BATCH_PAGES) {
+      const data = await fetchObservationsBatchPage(staleTaxa, idBelow);
+      page += 1;
+
+      if (page === 1) {
+        totalResults = data.total_results || 0;
+      }
+
+      const results = data.results || [];
+      if (results.length === 0) break;
+
+      const parsed = results.map(parseObservation).filter(o => o.id && staleTaxa.includes(o.taxon_id));
+      allObs.push(...parsed);
+
+      const minResultId = results.reduce((minId, obs) => {
+        if (!obs?.id) return minId;
+        return Math.min(minId, obs.id);
+      }, Number.POSITIVE_INFINITY);
+
+      if (!Number.isFinite(minResultId)) break;
+      idBelow = minResultId;
+
+      if (results.length < MAX_PER_PAGE) {
+        break;
+      }
+    }
+
+    if (page >= MAX_BATCH_PAGES) {
+      truncated = true;
+      console.warn(`Batch sync truncated after ${MAX_BATCH_PAGES} pages for ${staleTaxa.length} taxa.`);
+    }
+
+    if (allObs.length > 0) {
+      upsertObservations(allObs);
+    }
+
+    const countsByTaxon = new Map(staleTaxa.map(taxonId => [taxonId, 0]));
+    for (const obs of allObs) {
+      if (countsByTaxon.has(obs.taxon_id)) {
+        countsByTaxon.set(obs.taxon_id, countsByTaxon.get(obs.taxon_id) + 1);
+      }
+    }
+
+    const syncedTaxa = staleTaxa.map(taxonId => {
+      const total = countsByTaxon.get(taxonId) || 0;
+      updateSyncStatus(taxonId, total, page);
+      return { taxonId, synced: true, cached: false, total };
+    });
+
+    return {
+      synced: true,
+      cached: false,
+      total: allObs.length,
+      totalAvailable: totalResults,
+      pageCount: page,
+      truncated,
+      perTaxon: [...syncedTaxa, ...cachedTaxa]
+    };
+  } catch (err) {
+    console.error(`Error in batch sync for taxa [${staleTaxa.join(', ')}]:`, err.message);
+    throw err;
+  }
+}
+
 async function fetchTaxonDetails(taxonId) {
   const cacheKey = `taxon_${taxonId}`;
   const cached = getCached(cacheKey, CACHE_TTL);
@@ -145,6 +280,7 @@ async function fetchSpeciesCounts() {
 
 export {
   syncSpecies,
+  syncSpeciesBatch,
   fetchTaxonDetails,
   fetchSpeciesCounts,
   rateLimitedFetch

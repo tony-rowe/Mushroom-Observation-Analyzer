@@ -50,7 +50,7 @@ function BrowseMode({ species, categories, onSelectSpecies }) {
           <button onClick={() => setCat(CATEGORY_ALL)} className={`px-2.5 py-1 rounded-lg text-[10px] font-medium ${cat === CATEGORY_ALL ? 'bg-mushroom-gold text-black' : 'bg-green-900/40 text-gray-400 hover:text-white'}`}>All</button>
           {Object.entries(categories).map(([key, c]) => (
             <button key={key} onClick={() => setCat(key)} className={`px-2.5 py-1 rounded-lg text-[10px] font-medium flex items-center gap-1 ${cat === key ? 'bg-mushroom-gold text-black' : 'bg-green-900/40 text-gray-400 hover:text-white'}`}>
-              {c.emoji} {c.label}
+              {c.label}
             </button>
           ))}
         </div>
@@ -66,7 +66,7 @@ function BrowseMode({ species, categories, onSelectSpecies }) {
           <button key={s.id} onClick={() => onSelectSpecies(s)} className="glass-card-hover p-4 text-left">
             <div className="flex items-start justify-between mb-2">
               <div className="flex items-center gap-2">
-                <span className="text-2xl">{s.emoji}</span>
+                <span className="w-8 h-8 rounded-lg bg-green-100 text-green-900 text-xs font-semibold flex items-center justify-center">{(s.commonName || 'S').charAt(0)}</span>
                 <div>
                   <p className="text-sm font-semibold text-white leading-tight">{s.commonName}</p>
                   <p className="text-[10px] text-green-500/70 italic">{s.scientificName}</p>
@@ -77,14 +77,14 @@ function BrowseMode({ species, categories, onSelectSpecies }) {
             <p className="text-[10px] text-gray-500 line-clamp-2 mb-2">{s.description}</p>
             <div className="flex items-center gap-3 text-[10px]">
               <span className="px-1.5 py-0.5 rounded text-[9px] font-medium" style={{ background: categories[s.category]?.color + '20', color: categories[s.category]?.color }}>
-                {categories[s.category]?.emoji} {categories[s.category]?.label}
+                {categories[s.category]?.label}
               </span>
               {s.foragerScore && (
                 <span className={s.foragerScore.safetyRisk <= 2 ? 'text-green-500' : s.foragerScore.safetyRisk <= 3 ? 'text-yellow-500' : 'text-red-500'}>
-                  {s.foragerScore.safetyRisk <= 2 ? '✅ Safe' : s.foragerScore.safetyRisk <= 3 ? '⚠️ Caution' : '🔴 Expert'}
+                  {s.foragerScore.safetyRisk <= 2 ? 'Low Risk' : s.foragerScore.safetyRisk <= 3 ? 'Moderate Risk' : 'High Risk'}
                 </span>
               )}
-              {s.lookalikes?.length > 0 && <span className="text-red-400">⚠ {s.lookalikes.length} lookalike{s.lookalikes.length > 1 ? 's' : ''}</span>}
+              {s.lookalikes?.length > 0 && <span className="text-red-400">{s.lookalikes.length} lookalike{s.lookalikes.length > 1 ? 's' : ''}</span>}
             </div>
           </button>
         ))}
@@ -129,14 +129,14 @@ function SpeciesStudy({ species, onBack }) {
                 </div>
               </div>
             ) : (
-              <div className="w-full h-64 rounded-xl bg-green-900/30 flex items-center justify-center text-4xl">{species.emoji}</div>
+              <div className="w-full h-64 rounded-xl bg-green-900/30 flex items-center justify-center text-4xl">{(species.commonName || 'S').charAt(0)}</div>
             )}
           </div>
 
           <div className="flex-1">
             <div className="flex items-start justify-between">
               <div>
-                <h2 className="text-2xl font-bold text-white">{species.emoji} {species.commonName}</h2>
+                <h2 className="text-2xl font-bold text-white">{species.commonName}</h2>
                 <p className="text-green-500 italic">{species.scientificName}</p>
               </div>
               {fs.overall && <ScoreBadge score={fs.overall} />}
@@ -168,13 +168,13 @@ function SpeciesStudy({ species, onBack }) {
       </div>
 
       <div className="glass-card p-5">
-        <h3 className="text-lg font-semibold text-white mb-3">🔍 Identification Tips</h3>
+        <h3 className="text-lg font-semibold text-white mb-3">Identification Tips</h3>
         <p className="text-sm text-gray-300 leading-relaxed">{species.idTips}</p>
       </div>
 
       {species.lookalikes?.length > 0 && (
         <div className="glass-card p-5 border-red-900/30">
-          <h3 className="text-lg font-semibold text-red-400 mb-3">⚠️ Dangerous Lookalikes</h3>
+          <h3 className="text-lg font-semibold text-red-400 mb-3">Dangerous Lookalikes</h3>
           {species.lookalikes.map((la, i) => (
             <div key={i} className="p-3 rounded-xl bg-red-950/20 border border-red-900/20 mb-2">
               <div className="flex items-center gap-2 mb-1">
@@ -191,7 +191,7 @@ function SpeciesStudy({ species, onBack }) {
 
       {photos.length > 4 && (
         <div className="glass-card p-5">
-          <h3 className="text-lg font-semibold text-white mb-3">📸 Study Photos ({photos.length})</h3>
+          <h3 className="text-lg font-semibold text-white mb-3">Study Photos ({photos.length})</h3>
           <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2">
             {photos.map((p, i) => (
               <div key={p.id} className="relative group cursor-pointer" onClick={() => setActivePhoto(i)}>
@@ -253,7 +253,6 @@ function QuizMode({ categories }) {
     const pct = Math.round((score.correct / score.total) * 100);
     return (
       <div className="max-w-lg mx-auto text-center py-12 fade-in">
-        <p className="text-6xl mb-4">{pct >= 80 ? '🏆' : pct >= 50 ? '👍' : '📚'}</p>
         <h2 className="text-2xl font-bold text-white mb-2">Quiz Complete!</h2>
         <p className="text-4xl font-bold mb-2" style={{ color: pct >= 80 ? '#22c55e' : pct >= 50 ? '#facc15' : '#f97316' }}>
           {score.correct} / {score.total}
@@ -271,13 +270,13 @@ function QuizMode({ categories }) {
           <button onClick={() => setCat(CATEGORY_ALL)} className={`px-2 py-1 rounded text-[10px] font-medium ${cat === CATEGORY_ALL ? 'bg-mushroom-gold text-black' : 'bg-green-900/40 text-gray-400'}`}>All</button>
           {Object.entries(categories).map(([key, c]) => (
             <button key={key} onClick={() => setCat(key)} className={`px-2 py-1 rounded text-[10px] font-medium ${cat === key ? 'bg-mushroom-gold text-black' : 'bg-green-900/40 text-gray-400'}`}>
-              {c.emoji}
+              {c.label}
             </button>
           ))}
         </div>
         <div className="flex items-center gap-3">
           <span className="text-xs text-gray-500">{current + 1} / {questions.length}</span>
-          <span className="text-xs text-green-400 font-bold">{score.correct} ✓</span>
+          <span className="text-xs text-green-400 font-bold">{score.correct}</span>
         </div>
       </div>
 
@@ -288,7 +287,7 @@ function QuizMode({ categories }) {
               className="w-full h-72 md:h-96 object-cover" />
             <div className="p-5">
               <p className="text-sm text-gray-400 mb-1">What species is this?</p>
-              {q.photo.placeGuess && <p className="text-[10px] text-gray-600 mb-3">📍 {q.photo.placeGuess} · {q.photo.observedOn}</p>}
+              {q.photo.placeGuess && <p className="text-[10px] text-gray-600 mb-3">{q.photo.placeGuess} · {q.photo.observedOn}</p>}
 
               <div className="grid grid-cols-2 gap-2 mb-4">
                 {q.options.map(opt => {
@@ -301,7 +300,6 @@ function QuizMode({ categories }) {
                   return (
                     <button key={opt.id} onClick={() => handleAnswer(opt.id)}
                       className={`p-3 rounded-xl border text-left transition-all ${bg}`} disabled={!!selected}>
-                      <span className="mr-1">{opt.emoji}</span>
                       <span className="text-sm text-white">{opt.commonName}</span>
                       <p className="text-[10px] text-gray-500 italic mt-0.5">{opt.scientificName}</p>
                     </button>
@@ -312,11 +310,11 @@ function QuizMode({ categories }) {
               {selected && (
                 <div className="fade-in space-y-2">
                   <p className={`text-sm font-medium ${isCorrect ? 'text-green-400' : 'text-red-400'}`}>
-                    {isCorrect ? '✅ Correct!' : `❌ That's ${q.correctName}`}
+                    {isCorrect ? 'Correct' : `Incorrect — ${q.correctName}`}
                   </p>
-                  {q.hint && <p className="text-xs text-gray-400">💡 <strong>ID tip:</strong> {q.hint}</p>}
+                  {q.hint && <p className="text-xs text-gray-400"><strong>ID tip:</strong> {q.hint}</p>}
                   {q.lookalikes?.length > 0 && q.lookalikes.map((la, i) => (
-                    <p key={i} className="text-[10px] text-red-400/80">⚠️ Watch out for: {la.name} ({la.danger}) — {la.tip}</p>
+                    <p key={i} className="text-[10px] text-red-400/80">Watch out for: {la.name} ({la.danger}) — {la.tip}</p>
                   ))}
                   <button onClick={handleNext} className="btn-primary mt-2 text-sm">
                     {current + 1 >= questions.length ? 'See Results' : 'Next →'}
@@ -324,8 +322,8 @@ function QuizMode({ categories }) {
                 </div>
               )}
 
-              {!selected && !showHint && <button onClick={() => setShowHint(true)} className="btn-ghost text-xs">💡 Show Hint</button>}
-              {showHint && !selected && <p className="text-xs text-yellow-500/80 mt-1">💡 {q.hint}</p>}
+              {!selected && !showHint && <button onClick={() => setShowHint(true)} className="btn-ghost text-xs">Show Hint</button>}
+              {showHint && !selected && <p className="text-xs text-yellow-500/80 mt-1">{q.hint}</p>}
             </div>
           </div>
         </div>
@@ -353,13 +351,13 @@ export default function Training() {
     <div className="fade-in space-y-5">
       <div className="flex items-start justify-between flex-wrap gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-white mb-1">📖 Field Guide & Training</h1>
+          <h1 className="text-3xl font-bold text-white mb-1">Field Guide and Training</h1>
           <p className="text-gray-500 text-sm">{species.length} edible PNW species — fungi, berries, plants, fish, marine & more</p>
         </div>
         <div className="flex gap-2">
           {[
-            { id: 'browse', label: '📋 Browse', desc: 'Field Guide' },
-            { id: 'quiz', label: '🧠 Quiz', desc: 'Photo ID' }
+            { id: 'browse', label: 'Browse', desc: 'Field Guide' },
+            { id: 'quiz', label: 'Quiz', desc: 'Photo ID' }
           ].map(m => (
             <button key={m.id} onClick={() => setMode(m.id)}
               className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${mode === m.id ? 'bg-mushroom-gold text-black' : 'bg-green-900/40 text-gray-400 hover:text-white'}`}>
