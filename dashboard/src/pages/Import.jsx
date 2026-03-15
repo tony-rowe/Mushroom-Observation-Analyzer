@@ -40,13 +40,13 @@ export default function Import() {
   return (
     <div className="fade-in space-y-6 max-w-4xl">
       <div>
-        <h1 className="text-3xl font-bold text-white mb-1">Import Species</h1>
-        <p className="text-gray-500 text-sm">Add an iNaturalist taxon ID to register a new species in the system</p>
+        <h1 className="text-3xl font-bold text-green-900 mb-1">Import Species</h1>
+        <p className="text-green-700 text-sm">Add an iNaturalist taxon ID to register a new species in the system</p>
       </div>
 
       <div className="glass-card p-6">
-        <h2 className="text-lg font-semibold text-white mb-3">Add by Taxon ID</h2>
-        <p className="text-xs text-gray-500 mb-4">
+        <h2 className="text-lg font-semibold text-green-900 mb-3">Add by Taxon ID</h2>
+        <p className="text-xs text-green-700 mb-4">
           Find a species on <a href="https://www.inaturalist.org" target="_blank" rel="noopener noreferrer" className="text-mushroom-gold hover:underline">iNaturalist.org</a>,
           copy the taxon ID from the URL (e.g., <code className="text-green-400">/taxa/48978</code> → <code className="text-mushroom-gold">48978</code>), and paste it below.
         </p>
@@ -84,7 +84,7 @@ export default function Import() {
           }}>
             <div className="flex items-center gap-3 mb-2">
               <div>
-                <p className="text-sm font-semibold text-white">{result.species?.commonName}</p>
+                <p className="text-sm font-semibold text-green-900">{result.species?.commonName}</p>
                 <p className="text-xs text-green-500 italic">{result.species?.scientificName}</p>
               </div>
               <span className="ml-auto text-xs px-2 py-1 rounded-full" style={{
@@ -94,7 +94,7 @@ export default function Import() {
                 {result.status === 'imported' ? 'Imported' : 'Already exists'}
               </span>
             </div>
-            <p className="text-xs text-gray-400">{result.message}</p>
+            <p className="text-xs text-green-700">{result.message}</p>
             {result.species && (
               <div className="grid grid-cols-3 gap-3 mt-3">
                 <MiniInfo label="Category" value={result.species.category} />
@@ -102,7 +102,7 @@ export default function Import() {
                 <MiniInfo label="Taxon ID" value={result.species.taxonId} />
               </div>
             )}
-            <p className="text-[10px] text-gray-600 mt-3">
+            <p className="text-[10px] text-green-700 mt-3">
               This species is now in the dashboard, predictions, field guide, and quiz. Edit forager scores and ecology data in the server files to refine predictions.
             </p>
           </div>
@@ -110,7 +110,7 @@ export default function Import() {
 
         <div className="mt-4 glass-card p-4">
           <p className="text-[10px] font-mono uppercase tracking-widest text-green-600 mb-2">What happens on import</p>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs text-gray-400">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs text-green-700">
             <Step n="1" text="Fetches taxonomy, photos, Wikipedia summary from iNaturalist" />
             <Step n="2" text="Auto-detects category (fungi, berry, plant, flower, fish, etc.)" />
             <Step n="3" text="Generates default season, ecology, and forager score" />
@@ -122,7 +122,7 @@ export default function Import() {
       </div>
 
       <div className="glass-card p-5">
-        <h2 className="text-lg font-semibold text-white mb-3">User-Imported Species ({imported.length})</h2>
+        <h2 className="text-lg font-semibold text-green-900 mb-3">User-Imported Species ({imported.length})</h2>
         {loadingList ? <LoadingSpinner message="Loading..." size="sm" /> : imported.length === 0 ? (
           <p className="text-sm text-gray-600">No user-imported species yet. Use the form above to add one.</p>
         ) : (
@@ -131,8 +131,8 @@ export default function Import() {
               <div key={s.id} className="flex items-center justify-between p-3 rounded-xl bg-green-950/30 border border-green-800/20">
                 <div className="flex items-center gap-3">
                   <div>
-                    <p className="text-sm text-white font-medium">{s.commonName}</p>
-                    <p className="text-[10px] text-gray-500">{s.scientificName} · taxon {s.taxonId} · {s.category}</p>
+                    <p className="text-sm text-green-900 font-medium">{s.commonName}</p>
+                    <p className="text-[10px] text-green-700">{s.scientificName} · taxon {s.taxonId} · {s.category}</p>
                   </div>
                 </div>
                 <button onClick={() => handleDelete(s.id)} className="text-xs text-red-400/60 hover:text-red-400 px-2 py-1">Remove</button>
@@ -148,8 +148,8 @@ export default function Import() {
 function MiniInfo({ label, value }) {
   return (
     <div className="bg-green-950/40 rounded-lg px-3 py-2">
-      <p className="text-[9px] text-gray-600 uppercase">{label}</p>
-      <p className="text-xs text-gray-300 capitalize">{String(value)}</p>
+      <p className="text-[9px] text-green-700 uppercase">{label}</p>
+      <p className="text-xs text-green-900 capitalize">{String(value)}</p>
     </div>
   );
 }

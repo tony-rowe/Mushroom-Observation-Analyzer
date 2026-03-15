@@ -60,7 +60,7 @@ export default function SpeciesDetail() {
 
   return (
     <div className="fade-in space-y-6 max-w-6xl">
-      <Link to="/species" className="text-xs text-gray-500 hover:text-mushroom-gold transition-colors inline-flex items-center gap-1">
+      <Link to="/species" className="text-xs text-green-700 hover:text-mushroom-gold transition-colors inline-flex items-center gap-1">
         ← Back to Species Guide
       </Link>
 
@@ -82,7 +82,7 @@ export default function SpeciesDetail() {
           <div className="flex-1">
             <div className="flex items-start justify-between">
               <div>
-                <h1 className="text-3xl font-bold text-white mb-1">{species.commonName}</h1>
+                <h1 className="text-3xl font-bold text-green-900 mb-1">{species.commonName}</h1>
                 <p className="text-green-500 italic text-lg">{species.scientificName}</p>
               </div>
               <div className="flex gap-2">
@@ -97,10 +97,10 @@ export default function SpeciesDetail() {
               </div>
             </div>
 
-            <p className="text-gray-400 mt-3 text-sm leading-relaxed">{species.description}</p>
+            <p className="text-green-700 mt-3 text-sm leading-relaxed">{species.description}</p>
 
             {taxonDetails?.wikipediaSummary && (
-              <p className="text-gray-500 mt-2 text-xs leading-relaxed line-clamp-3"
+              <p className="text-green-700 mt-2 text-xs leading-relaxed line-clamp-3"
                  dangerouslySetInnerHTML={{ __html: taxonDetails.wikipediaSummary }} />
             )}
 
@@ -135,8 +135,8 @@ export default function SpeciesDetail() {
       </div>
 
       <div className="glass-card p-5">
-        <h2 className="text-lg font-semibold text-white mb-1">Observation Heatmap</h2>
-        <p className="text-xs text-gray-500 mb-4">Geographic distribution across the Pacific Northwest</p>
+        <h2 className="text-lg font-semibold text-green-900 mb-1">Observation Heatmap</h2>
+        <p className="text-xs text-green-700 mb-4">Geographic distribution across the Pacific Northwest</p>
         {heatmapData ? (
           <HeatMap points={heatmapData.points || []} height="450px" showControls={true} />
         ) : (
@@ -146,8 +146,8 @@ export default function SpeciesDetail() {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="glass-card p-5">
-          <h2 className="text-lg font-semibold text-white mb-1">Seasonal Pattern</h2>
-          <p className="text-xs text-gray-500 mb-4">Monthly observation frequency</p>
+          <h2 className="text-lg font-semibold text-green-900 mb-1">Seasonal Pattern</h2>
+          <p className="text-xs text-green-700 mb-4">Monthly observation frequency</p>
           <SeasonalChart data={stats?.byMonth || []} height={260} />
 
           <div className="mt-4 flex gap-0.5">
@@ -170,7 +170,7 @@ export default function SpeciesDetail() {
                         : '#1a2e1a'
                     }}
                   />
-                  <span className="text-[9px] text-gray-600">{MONTHS[i]}</span>
+                  <span className="text-[9px] text-green-700">{MONTHS[i]}</span>
                 </div>
               );
             })}
@@ -178,21 +178,21 @@ export default function SpeciesDetail() {
         </div>
 
         <div className="glass-card p-5">
-          <h2 className="text-lg font-semibold text-white mb-1">Quality Distribution</h2>
-          <p className="text-xs text-gray-500 mb-4">Verification grades of observations</p>
+          <h2 className="text-lg font-semibold text-green-900 mb-1">Quality Distribution</h2>
+          <p className="text-xs text-green-700 mb-4">Verification grades of observations</p>
           <QualityPieChart data={stats?.byQuality || []} height={260} />
         </div>
       </div>
 
       <div className="glass-card p-5">
-        <h2 className="text-lg font-semibold text-white mb-1">Year-over-Year Trend</h2>
-        <p className="text-xs text-gray-500 mb-4">Observation count by year</p>
+        <h2 className="text-lg font-semibold text-green-900 mb-1">Year-over-Year Trend</h2>
+        <p className="text-xs text-green-700 mb-4">Observation count by year</p>
         <YearlyTrendChart data={stats?.byYear || []} height={260} />
       </div>
 
       {stats?.recentObs?.length > 0 && (
         <div className="glass-card p-5">
-          <h2 className="text-lg font-semibold text-white mb-4">Recent Observations</h2>
+          <h2 className="text-lg font-semibold text-green-900 mb-4">Recent Observations</h2>
           <div className="space-y-2">
             {stats.recentObs.map(obs => (
               <div key={obs.id} className="flex items-center gap-4 p-3 rounded-xl bg-green-950/30 hover:bg-green-900/30 transition-colors">
@@ -204,8 +204,8 @@ export default function SpeciesDetail() {
                   </div>
                 )}
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm text-gray-300 truncate">{obs.place_guess || 'Unknown location'}</p>
-                  <p className="text-xs text-gray-500">{obs.observed_on || 'No date'} · {obs.user_login}</p>
+                  <p className="text-sm text-green-900 truncate">{obs.place_guess || 'Unknown location'}</p>
+                  <p className="text-xs text-green-700">{obs.observed_on || 'No date'} · {obs.user_login}</p>
                 </div>
                 <span
                   className="text-[10px] px-2 py-0.5 rounded-full font-medium"
@@ -236,8 +236,8 @@ export default function SpeciesDetail() {
 function InfoPill({ label, value }) {
   return (
     <div className="bg-green-950/40 rounded-xl px-3 py-2 border border-green-800/20">
-      <p className="text-[10px] text-gray-500 uppercase tracking-wider">{label}</p>
-      <p className="text-xs text-gray-300 mt-0.5">{value}</p>
+      <p className="text-[10px] text-green-700 uppercase tracking-wider">{label}</p>
+      <p className="text-xs text-green-900 mt-0.5">{value}</p>
     </div>
   );
 }
@@ -246,7 +246,7 @@ function MiniStat({ label, value, color }) {
   return (
     <div className="text-center">
       <p className={`text-xl font-bold ${color}`}>{value}</p>
-      <p className="text-[10px] text-gray-500 uppercase tracking-wider">{label}</p>
+      <p className="text-[10px] text-green-700 uppercase tracking-wider">{label}</p>
     </div>
   );
 }

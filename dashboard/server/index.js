@@ -15,7 +15,7 @@ import {
   getRecentWindowSummary,
   getCacheStatus
 } from './cache.js';
-import { syncSpecies, syncSpeciesBatch, fetchTaxonDetails } from './api.js';
+import { syncSpecies, syncSpeciesBatch, fetchTaxonDetails, fetchLivePnwWeeklyReport } from './api.js';
 import { PNW_PLACE_IDS } from './species.js';
 import { getTopPicks, getSpeciesPredictions, getRegionPredictions, getRegionsGeoJSON, setCalibration, getCalibration } from './predictions.js';
 import { runBacktest } from './backtest.js';
@@ -232,6 +232,16 @@ app.get('/api/reports/summary', (req, res) => {
       cache: getCacheStatus()
     });
   } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.get('/api/reports/live-weekly', async (_req, res) => {
+  try {
+    const live = await fetchLivePnwWeeklyReport();
+    res.json(live);
+  } catch (err) {
+    console.error('Live weekly report error:', err.message);
     res.status(500).json({ error: err.message });
   }
 });

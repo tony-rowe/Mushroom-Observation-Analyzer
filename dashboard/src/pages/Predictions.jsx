@@ -39,11 +39,11 @@ function FactorBar({ label, score, maxScore, color }) {
   const pct = (score / maxScore) * 100;
   return (
     <div className="flex items-center gap-2">
-      <span className="text-[10px] text-gray-500 w-20 shrink-0">{label}</span>
+      <span className="text-[10px] text-green-700 w-20 shrink-0">{label}</span>
       <div className="flex-1 h-2 rounded-full bg-green-950/60 overflow-hidden">
         <div className="h-full rounded-full transition-all duration-500" style={{ width: `${pct}%`, background: color || scoreColor(score * 2.5) }} />
       </div>
-      <span className="text-[10px] text-gray-400 w-8 text-right">{score}/{maxScore}</span>
+      <span className="text-[10px] text-green-700 w-8 text-right">{score}/{maxScore}</span>
     </div>
   );
 }
@@ -135,8 +135,8 @@ export default function Predictions() {
     <div className="fade-in space-y-6">
       <div className="flex items-start justify-between flex-wrap gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-white mb-1">Regional Forecast</h1>
-          <p className="text-gray-500 text-sm">
+          <h1 className="text-3xl font-bold text-green-900 mb-1">Regional Forecast</h1>
+          <p className="text-green-700 text-sm">
             {selectedSpeciesObj
               ? `${selectedSpeciesObj.commonName} predictions for ${MONTH_FULL[month - 1]}`
               : `Regional suitability model for ${MONTH_FULL[month - 1]}`
@@ -144,7 +144,7 @@ export default function Predictions() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <span className="text-xs text-gray-500">Month:</span>
+          <span className="text-xs text-green-700">Month:</span>
           <div className="flex gap-0.5">
             {MONTHS.map((m, i) => (
               <button
@@ -153,7 +153,7 @@ export default function Predictions() {
                 className={`px-2 py-1 rounded text-[10px] font-medium transition-all ${
                   month === i + 1
                     ? 'bg-mushroom-gold text-black'
-                    : 'bg-green-900/40 text-gray-500 hover:text-white'
+                    : 'bg-green-100 text-green-800 hover:text-green-900'
                 }`}
               >
                 {m}
@@ -168,14 +168,14 @@ export default function Predictions() {
           <div className="flex items-center gap-3 mb-2">
             <div>
               <p className="text-xs text-mushroom-gold uppercase font-mono tracking-widest">Top Recommendation for {MONTH_FULL[month - 1]}</p>
-              <h2 className="text-xl font-bold text-white">{heroRec.species.commonName} — {heroRec.region.name}</h2>
+              <h2 className="text-xl font-bold text-green-900">{heroRec.species.commonName} — {heroRec.region.name}</h2>
             </div>
             <div className="ml-auto text-right">
               <p className="text-3xl font-bold" style={{ color: scoreColor(heroRec.score) }}>{heroRec.score}</p>
-              <p className="text-[10px] text-gray-500">/ 110</p>
+              <p className="text-[10px] text-green-700">/ 110</p>
             </div>
           </div>
-          <p className="text-sm text-gray-400">{heroRec.tip}</p>
+          <p className="text-sm text-green-800">{heroRec.tip}</p>
           <p className="text-xs text-green-600 mt-2">{heroRec.accessTip}</p>
         </div>
       )}
@@ -184,7 +184,7 @@ export default function Predictions() {
         <button
           onClick={() => { setSelectedSpecies(null); setSelectedRegion(null); }}
           className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-all ${
-            !selectedSpecies ? 'bg-mushroom-gold text-black' : 'bg-green-900/40 text-gray-400 hover:text-white'
+            !selectedSpecies ? 'bg-mushroom-gold text-black' : 'bg-green-100 text-green-800 hover:text-green-900'
           }`}
         >
           All Species
@@ -194,7 +194,7 @@ export default function Predictions() {
             key={s.id}
             onClick={() => { setSelectedSpecies(s.id === selectedSpecies ? null : s.id); setSelectedRegion(null); }}
             className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-all ${
-              selectedSpecies === s.id ? 'bg-mushroom-gold text-black' : 'bg-green-900/40 text-gray-400 hover:text-white'
+              selectedSpecies === s.id ? 'bg-mushroom-gold text-black' : 'bg-green-100 text-green-800 hover:text-green-900'
             }`}
           >
             <span className="hidden lg:inline">{s.commonName.split(' ').slice(-1)[0]}</span>
@@ -228,7 +228,7 @@ export default function Predictions() {
             </MapContainer>
           </div>
           <div className="flex items-center justify-center gap-4 mt-3">
-            <span className="text-[10px] text-gray-500">Score:</span>
+            <span className="text-[10px] text-green-700">Score:</span>
             {[
               { label: '75+ Go Now', color: '#22c55e' },
               { label: '55+ Strong', color: '#84cc16' },
@@ -238,7 +238,7 @@ export default function Predictions() {
             ].map(l => (
               <div key={l.label} className="flex items-center gap-1">
                 <div className="w-3 h-3 rounded-sm" style={{ background: l.color, opacity: 0.6 }} />
-                <span className="text-[10px] text-gray-500">{l.label}</span>
+                <span className="text-[10px] text-green-700">{l.label}</span>
               </div>
             ))}
           </div>
@@ -272,19 +272,19 @@ function TopPicksList({ picks, loading, month }) {
   const good = picks.filter(p => p.score >= 35);
   return (
     <div className="glass-card p-4 max-h-[580px] overflow-y-auto">
-      <h3 className="text-sm font-semibold text-white mb-3">Top Recommendations — {MONTH_FULL[month - 1]}</h3>
-      {good.length === 0 && <p className="text-xs text-gray-600">No high-confidence recommendations for this month.</p>}
+      <h3 className="text-sm font-semibold text-green-900 mb-3">Top Recommendations — {MONTH_FULL[month - 1]}</h3>
+      {good.length === 0 && <p className="text-xs text-green-700">No high-confidence recommendations for this month.</p>}
       <div className="space-y-2">
         {good.map((p, i) => (
           <div key={i} className="p-3 rounded-xl transition-all" style={{ background: scoreBg(p.score) }}>
             <div className="flex items-center justify-between mb-1">
               <div>
-                <p className="text-xs font-semibold text-white">{p.species.commonName}</p>
-                <p className="text-[10px] text-gray-500">{p.region.name}</p>
+                <p className="text-xs font-semibold text-green-900">{p.species.commonName}</p>
+                <p className="text-[10px] text-green-700">{p.region.name}</p>
               </div>
               <div className="text-right">
                 <p className="text-sm font-bold" style={{ color: scoreColor(p.score) }}>{p.score}</p>
-                <p className="text-[9px] text-gray-600">{confidenceLabel(p.confidence)}</p>
+                <p className="text-[9px] text-green-700">{confidenceLabel(p.confidence)}</p>
               </div>
             </div>
             <FactorBar label="Season" score={p.factors.season.score} maxScore={40} />
@@ -300,10 +300,10 @@ function TopPicksList({ picks, loading, month }) {
 function SpeciesRegionList({ predictions, species, onRegionClick }) {
   return (
     <div className="glass-card p-4 max-h-[580px] overflow-y-auto">
-      <h3 className="text-sm font-semibold text-white mb-1">
+      <h3 className="text-sm font-semibold text-green-900 mb-1">
         {species?.commonName}
       </h3>
-      <p className="text-[10px] text-gray-500 mb-3">Ranked by foraging potential across Oregon zones</p>
+      <p className="text-[10px] text-green-700 mb-3">Ranked by foraging potential across Oregon zones</p>
       <div className="space-y-2">
         {predictions.map(p => (
           <button
@@ -313,13 +313,13 @@ function SpeciesRegionList({ predictions, species, onRegionClick }) {
             style={{ background: scoreBg(p.score) }}
           >
             <div className="flex items-center justify-between mb-1">
-              <p className="text-xs font-semibold text-white">{p.region.name}</p>
+              <p className="text-xs font-semibold text-green-900">{p.region.name}</p>
               <div className="flex items-center gap-2">
-                <span className="text-[9px] text-gray-500">{confidenceLabel(p.confidence)}</span>
+                <span className="text-[9px] text-green-700">{confidenceLabel(p.confidence)}</span>
                 <span className="text-sm font-bold" style={{ color: scoreColor(p.score) }}>{p.score}</span>
               </div>
             </div>
-            <p className="text-[10px] text-gray-500 mb-1">{p.factors.season.label} · {p.factors.habitat.label}</p>
+            <p className="text-[10px] text-green-700 mb-1">{p.factors.season.label} · {p.factors.habitat.label}</p>
             <FactorBar label="Season" score={p.factors.season.score} maxScore={40} />
             <FactorBar label="Habitat" score={p.factors.habitat.score} maxScore={25} />
           </button>
@@ -334,18 +334,18 @@ function RegionDetailPanel({ regionDetail, selectedRegion, month, onClose }) {
   return (
     <div className="glass-card p-4 max-h-[580px] overflow-y-auto">
       <div className="flex items-center justify-between mb-3">
-        <h3 className="text-sm font-semibold text-white">
+        <h3 className="text-sm font-semibold text-green-900">
           {regionDetail[0]?.region?.name || selectedRegion}
         </h3>
-        <button onClick={onClose} className="text-gray-500 hover:text-white text-xs">✕ Close</button>
+        <button onClick={onClose} className="text-green-700 hover:text-green-900 text-xs">Close</button>
       </div>
-      <p className="text-[10px] text-gray-500 mb-3">Species predictions for {MONTH_FULL[month - 1]}</p>
-      {good.length === 0 && <p className="text-xs text-gray-600">No species expected in this region this month.</p>}
+      <p className="text-[10px] text-green-700 mb-3">Species predictions for {MONTH_FULL[month - 1]}</p>
+      {good.length === 0 && <p className="text-xs text-green-700">No species expected in this region this month.</p>}
       <div className="space-y-2">
         {good.map(p => (
           <div key={p.speciesId} className="p-3 rounded-xl" style={{ background: scoreBg(p.score) }}>
             <div className="flex items-center justify-between mb-1">
-              <p className="text-xs font-semibold text-white">{p.species.commonName}</p>
+              <p className="text-xs font-semibold text-green-900">{p.species.commonName}</p>
               <span className="text-sm font-bold" style={{ color: scoreColor(p.score) }}>{p.score}</span>
             </div>
             <div className="space-y-0.5">
@@ -356,7 +356,7 @@ function RegionDetailPanel({ regionDetail, selectedRegion, month, onClose }) {
               <FactorBar label="Temp" score={p.factors.temperature.score} maxScore={10} />
               <FactorBar label="History" score={p.factors.historical.score} maxScore={10} />
             </div>
-            {p.tip && <p className="text-[10px] text-gray-500 mt-2 leading-relaxed">{p.tip}</p>}
+            {p.tip && <p className="text-[10px] text-green-700 mt-2 leading-relaxed">{p.tip}</p>}
             {p.accessTip && <p className="text-[10px] text-green-600 mt-1">{p.accessTip}</p>}
           </div>
         ))}

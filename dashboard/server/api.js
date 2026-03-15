@@ -10,6 +10,7 @@ const SYNC_COOLDOWN = 3600;
 const MAX_PER_PAGE = 200;
 const MAX_PAGES = 10;
 const MAX_BATCH_PAGES = 120;
+const LIVE_REPORT_CACHE_TTL = 15 * 60;
 
 let lastRequestTime = 0;
 
@@ -278,10 +279,83 @@ async function fetchSpeciesCounts() {
   return result;
 }
 
+function formatUtcDate(date) {
+  return date.toISOString().slice(0, 10);
+}
+
+async function fetchLivePnwWeeklyReport() {
+  const now = new Date();
+  const end = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+  const start = new Date(end);
+  start.setUTCDate(end.getUTCDate() - 6);
+
+  const d1 = formatUtcDate(start);
+  const d2 = formatUtcDate(end);
+
+  const cacheKey = `live_weekly_pnw_${d1}_${d2}`;
+  const cached = getCached(cacheKey, LIVE_REPORT_CACHE_TTL);
+  if (cached) {
+    return { ...cached, cached: true };
+  }
+
+  const placeIds = PNW_PLACE_IDS.join(',');
+  const commonParams = new URLSearchParams({
+    place_id: placeIds,
+    iconic_taxa: 'Plantae,Fungi',
+    quality_grade: 'research,needs_id',
+    d1,
+    d2
+  });
+
+  const speciesCountsUrl = `${API_BASE}/observations/species_counts?${new URLSearchParams({
+    ...Object.fromEntries(commonParams.entries()),
+    per_page: '200'
+  }).toString()}`;
+  const histogramUrl = `${API_BASE}/observations/histogram?${new URLSearchParams({
+    ...Object.fromEntries(commonParams.entries()),
+    interval: 'day'
+  }).toString()}`;
+
+  const [speciesCountsData, histogramData] = await Promise.all([
+    rateLimitedFetch(speciesCountsUrl),
+    rateLimitedFetch(histogramUrl)
+  ]);
+
+  const topSpecies = (speciesCountsData.results || []).map((r) => ({
+    taxonId: r.taxon?.id,
+    scientificName: r.taxon?.name || '',
+    commonName: r.taxon?.preferred_common_name || r.taxon?.name || '',
+    iconicTaxonName: r.taxon?.iconic_taxon_name || '',
+    rank: r.taxon?.rank || '',
+    count: r.count || 0,
+    photoUrl: r.taxon?.default_photo?.square_url || null
+  }));
+
+  const dayHistogram = histogramData?.results?.day || {};
+  const histogram = Object.entries(dayHistogram)
+    .sort((a, b) => a[0].localeCompare(b[0]))
+    .map(([day, count]) => ({ day, count }));
+
+  const totalObservations = histogram.reduce((sum, row) => sum + (row.count || 0), 0);
+  const payload = {
+    cached: false,
+    source: 'inat_api',
+    window: { d1, d2, days: 7 },
+    queryCount: 2,
+    totalObservations,
+    histogram,
+    topSpecies
+  };
+
+  setCache(cacheKey, payload, LIVE_REPORT_CACHE_TTL);
+  return payload;
+}
+
 export {
   syncSpecies,
   syncSpeciesBatch,
   fetchTaxonDetails,
   fetchSpeciesCounts,
+  fetchLivePnwWeeklyReport,
   rateLimitedFetch
 };

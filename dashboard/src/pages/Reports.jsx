@@ -16,40 +16,51 @@ import LoadingSpinner from '../components/LoadingSpinner';
 const STREAMLIT_URL = import.meta.env.VITE_STREAMLIT_URL || 'http://localhost:8501';
 
 export default function Reports() {
-  const { data, loading, error } = useApi('/reports/summary');
+  const { data: summaryData, loading: summaryLoading, error: summaryError } = useApi('/reports/summary');
+  const { data: liveData, loading: liveLoading, error: liveError } = useApi('/reports/live-weekly');
 
-  const rollingSeries = data?.rolling?.series || [];
-  const recent7d = data?.recent7d || {};
-  const cache = data?.cache || {};
+  const rollingSeries = liveData?.histogram || [];
+  const topSpecies = liveData?.topSpecies || [];
+  const total7d = liveData?.totalObservations || 0;
+  const cache = summaryData?.cache || {};
 
   const avgPerDay = useMemo(() => {
-    if (!recent7d.total) return 0;
-    return (recent7d.total / 7).toFixed(1);
-  }, [recent7d.total]);
+    if (!total7d) return 0;
+    return (total7d / 7).toFixed(1);
+  }, [total7d]);
 
-  if (loading) return <LoadingSpinner message="Loading reporting data..." />;
-  if (error) return <p className="text-red-600 text-sm">Failed to load reports: {error}</p>;
+  const byIconic = useMemo(() => {
+    const grouped = new Map();
+    for (const row of topSpecies) {
+      const key = row.iconicTaxonName || 'Unknown';
+      grouped.set(key, (grouped.get(key) || 0) + (row.count || 0));
+    }
+    return Array.from(grouped.entries()).map(([group, count]) => ({ group, count }));
+  }, [topSpecies]);
+
+  if (summaryLoading || liveLoading) return <LoadingSpinner message="Loading reporting data..." />;
+  if (summaryError || liveError) return <p className="text-red-600 text-sm">Failed to load reports: {summaryError || liveError}</p>;
 
   return (
     <div className="fade-in space-y-6">
       <div>
         <h1 className="text-2xl sm:text-3xl font-bold text-green-900 mb-1">Reporting Center</h1>
         <p className="text-green-700 text-sm">
-          Rolling trends, weekly activity, and cache health based on your local observation store.
+          Live iNaturalist 7-day trend (plants + fungi across the PNW) plus local cache health.
         </p>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard label="Observations (7d)" value={recent7d.total?.toLocaleString?.() || '0'} />
+        <StatCard label="Live observations (7d)" value={total7d.toLocaleString()} />
         <StatCard label="Average / day" value={avgPerDay} />
-        <StatCard label="Delta vs prior week" value={(recent7d.deltaVsPreviousWeek || 0).toLocaleString()} />
-        <StatCard label="Cached observations" value={cache.observations?.toLocaleString?.() || '0'} />
+        <StatCard label="Live API calls used" value={String(liveData?.queryCount || 0)} />
+        <StatCard label="Cached observations" value={cache.observations?.toLocaleString() || '0'} />
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
         <div className="glass-card p-5 xl:col-span-2">
-          <h2 className="text-lg font-semibold text-green-900 mb-1">Rolling 7-day activity</h2>
-          <p className="text-sm text-green-700 mb-4">Daily observations and rolling accumulation window.</p>
+          <h2 className="text-lg font-semibold text-green-900 mb-1">iNaturalist rolling 7-day activity</h2>
+          <p className="text-sm text-green-700 mb-4">Daily live observations in Oregon, Washington, and Idaho for plants + fungi.</p>
           <div className="h-80">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={rollingSeries}>
@@ -64,25 +75,27 @@ export default function Reports() {
                     color: '#14532d'
                   }}
                 />
-                <Line type="monotone" dataKey="count" stroke="#16a34a" strokeWidth={2} dot={false} name="Daily" />
-                <Line type="monotone" dataKey="rolling" stroke="#f59e0b" strokeWidth={2} dot={false} name="Rolling (7d)" />
+                <Line type="monotone" dataKey="count" stroke="#16a34a" strokeWidth={2} dot={false} name="Daily (live)" />
               </LineChart>
             </ResponsiveContainer>
           </div>
         </div>
 
         <div className="glass-card p-5">
-          <h2 className="text-lg font-semibold text-green-900 mb-1">Top species (last 7 days)</h2>
-          <p className="text-sm text-green-700 mb-4">Based on cached PNW observations.</p>
+          <h2 className="text-lg font-semibold text-green-900 mb-1">Top taxa (live, last 7 days)</h2>
+          <p className="text-sm text-green-700 mb-4">Ranked directly from iNaturalist species counts.</p>
           <div className="space-y-2 max-h-72 overflow-y-auto">
-            {(recent7d.topSpecies || []).slice(0, 10).map((item) => (
+            {topSpecies.slice(0, 10).map((item) => (
               <div key={item.taxonId} className="flex items-center justify-between bg-green-50 rounded-lg px-3 py-2 border border-green-200">
-                <p className="text-sm text-green-900">{item.commonName}</p>
+                <div>
+                  <p className="text-sm text-green-900">{item.commonName || item.scientificName}</p>
+                  <p className="text-[10px] text-green-700">{item.iconicTaxonName || 'Unknown'}</p>
+                </div>
                 <p className="text-sm font-semibold text-green-700">{item.count.toLocaleString()}</p>
               </div>
             ))}
-            {(!recent7d.topSpecies || recent7d.topSpecies.length === 0) && (
-              <p className="text-sm text-green-700">No observations in the last 7 days.</p>
+            {topSpecies.length === 0 && (
+              <p className="text-sm text-green-700">No live observations in the last 7 days.</p>
             )}
           </div>
         </div>
@@ -90,13 +103,13 @@ export default function Reports() {
 
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
         <div className="glass-card p-5">
-          <h2 className="text-lg font-semibold text-green-900 mb-1">Quality breakdown (7d)</h2>
-          <p className="text-sm text-green-700 mb-4">Research vs needs-id mix in the last week.</p>
+          <h2 className="text-lg font-semibold text-green-900 mb-1">Live distribution by iconic taxon</h2>
+          <p className="text-sm text-green-700 mb-4">How the live 7-day total splits across plants vs fungi.</p>
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={(recent7d.byQuality || []).map((q) => ({ quality: q.quality_grade, count: q.count }))}>
+              <BarChart data={byIconic}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#bbf7d0" />
-                <XAxis dataKey="quality" tick={{ fill: '#166534', fontSize: 11 }} />
+                <XAxis dataKey="group" tick={{ fill: '#166534', fontSize: 11 }} />
                 <YAxis tick={{ fill: '#166534', fontSize: 11 }} />
                 <Tooltip
                   contentStyle={{
@@ -110,6 +123,9 @@ export default function Reports() {
               </BarChart>
             </ResponsiveContainer>
           </div>
+          <p className="text-xs text-green-700 mt-3">
+            Cached live-report window: {liveData?.window?.d1 || 'n/a'} to {liveData?.window?.d2 || 'n/a'}.
+          </p>
         </div>
 
         <div className="glass-card p-5">
