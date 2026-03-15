@@ -80,6 +80,8 @@ On Synology at hostname `desertbuddha`, Streamlit is:
 python3 -m pip install -r requirements.txt
 ```
 
+Dependency note: `pandas==2.1.1` is paired with `numpy==1.26.4` for Python 3.12 ABI compatibility.
+
 ### Dashboard dependencies
 
 ```bash

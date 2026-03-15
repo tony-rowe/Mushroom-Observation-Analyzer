@@ -21,6 +21,8 @@ python3 -m pip install -r requirements.txt
 python3 -m streamlit run streamlit/app.py
 ```
 
+The pinned Python dependency set includes `numpy==1.26.4` with `pandas==2.1.1` to prevent binary import errors on Python 3.12.
+
 ### Run with Docker Compose
 
 From the repo root:
