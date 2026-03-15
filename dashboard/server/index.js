@@ -90,7 +90,7 @@ app.post('/api/sync-all', async (_req, res) => {
       if (!syncProgress.get(species.taxonId)) {
         syncProgress.set(species.taxonId, true);
         try {
-          const result = await syncSpecies(species.taxonId);
+          const result = await syncSpecies(species.taxonId, true);
           const statusLabel = result.cached ? 'cached' : 'synced';
           const truncatedLabel = result.truncated ? ' (partial)' : '';
           console.log(`${statusLabel.toUpperCase()}: ${species.commonName} (${species.taxonId}) - ${result.total} observations${truncatedLabel}`);
