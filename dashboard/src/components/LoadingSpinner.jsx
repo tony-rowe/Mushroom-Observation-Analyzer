@@ -8,7 +8,7 @@ export default function LoadingSpinner({ message = 'Loading...', size = 'md' }) 
   return (
     <div className="flex flex-col items-center justify-center gap-3 py-12">
       <div className={`${sizeClasses[size]} border-2 border-green-900 border-t-mushroom-gold rounded-full animate-spin`} />
-      <p className="text-sm text-gray-500">{message}</p>
+      <p className="text-sm text-green-700">{message}</p>
     </div>
   );
 }

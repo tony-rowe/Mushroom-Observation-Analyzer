@@ -6,11 +6,11 @@ import { MONTHS, getSeasonColor, qualityGradeColor, qualityGradeLabel, formatNum
 
 const TOOLTIP_STYLE = {
   contentStyle: {
-    background: 'rgba(10, 20, 10, 0.95)',
-    border: '1px solid rgba(34, 197, 94, 0.3)',
+    background: 'rgba(255, 255, 255, 0.97)',
+    border: '1px solid rgba(22, 163, 74, 0.35)',
     borderRadius: '12px',
     fontSize: '12px',
-    color: '#d1d5db'
+    color: '#14532d'
   }
 };
 
@@ -29,8 +29,8 @@ export function SeasonalChart({ data = [], height = 250 }) {
     <ResponsiveContainer width="100%" height={height}>
       <BarChart data={chartData} barCategoryGap="20%">
         <CartesianGrid strokeDasharray="3 3" stroke="#1a2e1a" />
-        <XAxis dataKey="name" tick={{ fontSize: 11, fill: '#9ca3af' }} />
-        <YAxis tick={{ fontSize: 11, fill: '#9ca3af' }} />
+        <XAxis dataKey="name" tick={{ fontSize: 11, fill: '#166534' }} />
+        <YAxis tick={{ fontSize: 11, fill: '#166534' }} />
         <Tooltip {...TOOLTIP_STYLE} formatter={(value) => [formatNumber(value), 'Observations']} />
         <Bar dataKey="observations" radius={[6, 6, 0, 0]}>
           {chartData.map((entry, i) => (
@@ -49,7 +49,7 @@ export function QualityPieChart({ data = [], height = 250 }) {
     color: qualityGradeColor(d.quality_grade)
   }));
 
-  if (chartData.length === 0) return <div className="flex items-center justify-center h-full text-gray-600 text-sm">No data</div>;
+  if (chartData.length === 0) return <div className="flex items-center justify-center h-full text-green-700 text-sm">No data</div>;
 
   return (
     <ResponsiveContainer width="100%" height={height}>
@@ -68,7 +68,7 @@ export function QualityPieChart({ data = [], height = 250 }) {
         </Pie>
         <Tooltip {...TOOLTIP_STYLE} />
         <Legend
-          formatter={(value) => <span className="text-xs text-gray-400">{value}</span>}
+          formatter={(value) => <span className="text-xs text-green-700">{value}</span>}
         />
       </PieChart>
     </ResponsiveContainer>
@@ -76,7 +76,7 @@ export function QualityPieChart({ data = [], height = 250 }) {
 }
 
 export function YearlyTrendChart({ data = [], height = 250 }) {
-  if (data.length === 0) return <div className="flex items-center justify-center h-full text-gray-600 text-sm">No data</div>;
+  if (data.length === 0) return <div className="flex items-center justify-center h-full text-green-700 text-sm">No data</div>;
 
   return (
     <ResponsiveContainer width="100%" height={height}>
@@ -88,8 +88,8 @@ export function YearlyTrendChart({ data = [], height = 250 }) {
           </linearGradient>
         </defs>
         <CartesianGrid strokeDasharray="3 3" stroke="#1a2e1a" />
-        <XAxis dataKey="year" tick={{ fontSize: 11, fill: '#9ca3af' }} />
-        <YAxis tick={{ fontSize: 11, fill: '#9ca3af' }} />
+        <XAxis dataKey="year" tick={{ fontSize: 11, fill: '#166534' }} />
+        <YAxis tick={{ fontSize: 11, fill: '#166534' }} />
         <Tooltip {...TOOLTIP_STYLE} formatter={(value) => [formatNumber(value), 'Observations']} />
         <Area
           type="monotone" dataKey="count" stroke="#22c55e"
@@ -116,8 +116,8 @@ export function MultiSpeciesChart({ speciesStats = [], height = 300 }) {
     <ResponsiveContainer width="100%" height={height}>
       <BarChart data={chartData} layout="vertical" barCategoryGap="15%">
         <CartesianGrid strokeDasharray="3 3" stroke="#1a2e1a" horizontal={false} />
-        <XAxis type="number" tick={{ fontSize: 10, fill: '#9ca3af' }} />
-        <YAxis type="category" dataKey="name" tick={{ fontSize: 10, fill: '#9ca3af' }} width={130} />
+        <XAxis type="number" tick={{ fontSize: 10, fill: '#166534' }} />
+        <YAxis type="category" dataKey="name" tick={{ fontSize: 10, fill: '#166534' }} width={130} />
         <Tooltip {...TOOLTIP_STYLE} formatter={(value) => [formatNumber(value), 'Observations']} />
         <Bar dataKey="observations" fill="#22c55e" fillOpacity={0.7} radius={[0, 6, 6, 0]} />
       </BarChart>

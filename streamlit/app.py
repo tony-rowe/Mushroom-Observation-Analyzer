@@ -2,8 +2,9 @@ from __future__ import annotations
 
 import math
 import re
+import sqlite3
 import time
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Iterable
 
@@ -19,6 +20,7 @@ DEFAULT_DELAY_SECONDS = 1.1
 DEFAULT_MAX_RECORDS = 4000
 DEFAULT_MAX_PAGES = 60
 DEFAULT_ICONIC_TAXA = "Fungi"
+DASHBOARD_CACHE_DB = Path(__file__).resolve().parents[1] / "dashboard" / "data" / "cache.db"
 
 
 def parse_int_csv(text: str) -> list[int]:
@@ -37,6 +39,59 @@ def load_default_taxon_ids() -> list[int]:
         return []
     content = species_js.read_text(encoding="utf-8")
     return sorted({int(match) for match in re.findall(r"taxonId:\s*(\d+)", content)})
+
+
+@st.cache_data(ttl=1800, show_spinner=False)
+def load_observations_from_dashboard_cache(
+    db_path: str,
+    taxon_ids: tuple[int, ...],
+    quality_grades: tuple[str, ...],
+    max_records: int,
+) -> list[dict]:
+    if not Path(db_path).exists():
+        return []
+
+    clauses = ["observed_on IS NOT NULL"]
+    params: list[object] = []
+
+    if taxon_ids:
+        placeholders = ",".join(["?"] * len(taxon_ids))
+        clauses.append(f"taxon_id IN ({placeholders})")
+        params.extend(taxon_ids)
+
+    if quality_grades:
+        placeholders = ",".join(["?"] * len(quality_grades))
+        clauses.append(f"quality_grade IN ({placeholders})")
+        params.extend(quality_grades)
+
+    where_sql = " AND ".join(clauses)
+    query = f"""
+        SELECT
+            id as observation_id,
+            taxon_id,
+            species_guess as taxon_name,
+            species_guess as common_name,
+            quality_grade,
+            observed_on,
+            latitude,
+            longitude,
+            place_guess,
+            user_login
+        FROM observations
+        WHERE {where_sql}
+        ORDER BY observed_on DESC
+        LIMIT ?
+    """
+    params.append(max_records)
+
+    with sqlite3.connect(db_path) as conn:
+        conn.row_factory = sqlite3.Row
+        rows = conn.execute(query, params).fetchall()
+
+    records = [dict(row) for row in rows]
+    for row in records:
+        row["url"] = f"https://www.inaturalist.org/observations/{row.get('observation_id')}"
+    return records
 
 
 def chunk_taxon_ids(taxon_ids: list[int], max_chars: int = 1200) -> list[list[int]]:
@@ -207,6 +262,11 @@ default_taxon_ids = load_default_taxon_ids()
 
 with st.sidebar:
     st.header("Query Settings")
+    data_source = st.selectbox(
+        "Data Source",
+        ("Dashboard SQLite cache (fastest)", "iNaturalist API (live fetch)"),
+        help="Use the local dashboard cache whenever possible to minimize API calls.",
+    )
     mode = st.selectbox(
         "Taxon Scope",
         (
@@ -236,6 +296,12 @@ with st.sidebar:
         help="Useful when querying without explicit taxon IDs (for example: Fungi).",
     )
 
+    cache_db_path = st.text_input(
+        "Dashboard cache DB path",
+        value=str(DASHBOARD_CACHE_DB),
+        help="Default cache location populated by the Express dashboard sync.",
+    )
+
     quality = st.multiselect(
         "Quality grades",
         options=["research", "needs_id", "casual"],
@@ -260,18 +326,39 @@ if mode != "No taxon filter" and not taxon_ids:
     st.error("No taxon IDs were provided. Select tracked taxa or enter custom taxon IDs.")
     st.stop()
 
-with st.spinner("Fetching observations from iNaturalist..."):
-    records, meta = load_observations_cached(
-        place_ids=tuple(place_ids),
-        taxon_ids=tuple(taxon_ids),
-        quality_grades=tuple(quality),
-        max_records=max_records,
-        max_pages=max_pages,
-        delay_seconds=delay_seconds,
-        iconic_taxa=iconic_taxa.strip(),
-    )
+if data_source.startswith("Dashboard SQLite"):
+    with st.spinner("Loading observations from dashboard cache..."):
+        records = load_observations_from_dashboard_cache(
+            db_path=cache_db_path,
+            taxon_ids=tuple(taxon_ids),
+            quality_grades=tuple(quality),
+            max_records=max_records,
+        )
+        meta = {
+            "query_count": 0,
+            "page_count": 0,
+            "record_count": len(records),
+            "truncated": len(records) >= max_records,
+            "fetched_at_utc": datetime.now(tz=timezone.utc).isoformat(timespec="seconds"),
+            "source": "dashboard_cache",
+            "cache_db_path": cache_db_path,
+        }
+else:
+    with st.spinner("Fetching observations from iNaturalist..."):
+        records, meta = load_observations_cached(
+            place_ids=tuple(place_ids),
+            taxon_ids=tuple(taxon_ids),
+            quality_grades=tuple(quality),
+            max_records=max_records,
+            max_pages=max_pages,
+            delay_seconds=delay_seconds,
+            iconic_taxa=iconic_taxa.strip(),
+        )
+        meta["source"] = "inat_api"
 
 df = pd.DataFrame.from_records(records)
+if not df.empty:
+    df["observed_on"] = pd.to_datetime(df["observed_on"], errors="coerce")
 
 if df.empty:
     st.warning("No observations returned for the current query settings.")
@@ -280,7 +367,10 @@ if df.empty:
 col1, col2, col3, col4 = st.columns(4)
 col1.metric("Observations", f"{len(df):,}")
 col2.metric("Distinct taxa", f"{df['taxon_id'].nunique():,}")
-col3.metric("API requests", f"{meta.get('query_count', 0):,}")
+if meta.get("source") == "dashboard_cache":
+    col3.metric("API requests", "0")
+else:
+    col3.metric("API requests", f"{meta.get('query_count', 0):,}")
 col4.metric("Fetched at (UTC)", meta.get("fetched_at_utc", "n/a"))
 
 if meta.get("truncated"):
@@ -292,6 +382,19 @@ date_min = df["observed_on"].min()
 date_max = df["observed_on"].max()
 if pd.notna(date_min) and pd.notna(date_max):
     st.caption(f"Date range in dataset: {date_min.date().isoformat()} to {date_max.date().isoformat()}")
+
+daily = (
+    df.dropna(subset=["observed_on"])
+    .assign(day=lambda frame: frame["observed_on"].dt.date)
+    .groupby("day", as_index=False)["observation_id"]
+    .count()
+    .rename(columns={"observation_id": "observations"})
+    .sort_values("day")
+)
+if not daily.empty:
+    daily["rolling_7d"] = daily["observations"].rolling(window=7, min_periods=1).sum()
+    trailing_7d = int(daily.tail(7)["observations"].sum())
+    st.metric("Trailing 7-day observations", f"{trailing_7d:,}")
 
 monthly = (
     df.dropna(subset=["observed_on"])
@@ -315,21 +418,66 @@ top_taxa = (
     .sort_values("observations", ascending=False)
 )
 
-chart_col_1, chart_col_2 = st.columns(2)
-with chart_col_1:
-    st.subheader("Monthly observations")
-    monthly_fig = px.line(monthly, x="month", y="observations", markers=True)
-    monthly_fig.update_layout(height=360, margin=dict(l=10, r=10, t=30, b=10))
-    st.plotly_chart(monthly_fig, use_container_width=True)
+tab_rolling, tab_standard, tab_taxa = st.tabs(["Rolling 7-day report", "Monthly and quality", "Top taxa and momentum"])
 
-with chart_col_2:
-    st.subheader("Quality distribution")
-    quality_fig = px.bar(quality_counts, x="quality_grade", y="observations")
-    quality_fig.update_layout(height=360, margin=dict(l=10, r=10, t=30, b=10))
-    st.plotly_chart(quality_fig, use_container_width=True)
+with tab_rolling:
+    if daily.empty:
+        st.info("Not enough dated observations to compute rolling metrics.")
+    else:
+        rolling_fig = px.line(
+            daily,
+            x="day",
+            y=["observations", "rolling_7d"],
+            labels={"value": "Observations", "variable": "Series"},
+        )
+        rolling_fig.update_layout(height=380, margin=dict(l=10, r=10, t=30, b=10))
+        st.plotly_chart(rolling_fig, use_container_width=True)
 
-st.subheader("Top taxa by observation count")
-st.dataframe(top_taxa.head(50), use_container_width=True, hide_index=True)
+        now_utc = datetime.now(tz=timezone.utc)
+        current_start = pd.Timestamp(now_utc.date() - timedelta(days=6))
+        previous_start = pd.Timestamp(now_utc.date() - timedelta(days=13))
+        previous_end = pd.Timestamp(now_utc.date() - timedelta(days=7))
+
+        dated_df = df.dropna(subset=["observed_on"])
+        current_week = (
+            dated_df[dated_df["observed_on"].dt.date >= current_start.date()]
+            .groupby(["taxon_id", "common_name"], as_index=False)["observation_id"]
+            .count()
+            .rename(columns={"observation_id": "current_7d"})
+        )
+        previous_week = (
+            dated_df[
+                (dated_df["observed_on"].dt.date >= previous_start.date())
+                & (dated_df["observed_on"].dt.date <= previous_end.date())
+            ]
+            .groupby(["taxon_id", "common_name"], as_index=False)["observation_id"]
+            .count()
+            .rename(columns={"observation_id": "previous_7d"})
+        )
+        momentum = current_week.merge(previous_week, how="left", on=["taxon_id", "common_name"]).fillna(0)
+        momentum["delta"] = momentum["current_7d"] - momentum["previous_7d"]
+        momentum = momentum.sort_values(["delta", "current_7d"], ascending=False)
+
+        st.subheader("Weekly momentum by taxon")
+        st.dataframe(momentum.head(20), use_container_width=True, hide_index=True)
+
+with tab_standard:
+    chart_col_1, chart_col_2 = st.columns(2)
+    with chart_col_1:
+        st.subheader("Monthly observations")
+        monthly_fig = px.line(monthly, x="month", y="observations", markers=True)
+        monthly_fig.update_layout(height=360, margin=dict(l=10, r=10, t=30, b=10))
+        st.plotly_chart(monthly_fig, use_container_width=True)
+
+    with chart_col_2:
+        st.subheader("Quality distribution")
+        quality_fig = px.bar(quality_counts, x="quality_grade", y="observations")
+        quality_fig.update_layout(height=360, margin=dict(l=10, r=10, t=30, b=10))
+        st.plotly_chart(quality_fig, use_container_width=True)
+
+with tab_taxa:
+    st.subheader("Top taxa by observation count")
+    st.dataframe(top_taxa.head(50), use_container_width=True, hide_index=True)
 
 map_df = df.dropna(subset=["latitude", "longitude"])[["latitude", "longitude"]]
 if not map_df.empty:
@@ -362,7 +510,10 @@ st.download_button(
     mime="text/csv",
 )
 
-st.caption(
-    f"Approximate page efficiency: {meta.get('query_count', 0)} request(s) for {len(df):,} observations "
-    f"({math.floor(len(df) / max(meta.get('query_count', 1), 1))} obs/request)."
-)
+if meta.get("source") == "dashboard_cache":
+    st.caption(f"Data source: dashboard SQLite cache ({meta.get('cache_db_path', str(DASHBOARD_CACHE_DB))}).")
+else:
+    st.caption(
+        f"Approximate page efficiency: {meta.get('query_count', 0)} request(s) for {len(df):,} observations "
+        f"({math.floor(len(df) / max(meta.get('query_count', 1), 1))} obs/request)."
+    )

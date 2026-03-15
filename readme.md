@@ -38,6 +38,11 @@ npm run lint
 npm run build
 ```
 
+In-app reporting center:
+
+- Open the **Reports** section in the dashboard sidebar for rolling 7-day trends and cache status.
+- Cache location: `dashboard/data/cache.db`
+
 ### 3) Streamlit Reporting (`streamlit/app.py`)
 
 A reporting-oriented Streamlit dashboard that pulls iNaturalist observations with query-efficient chained pagination.

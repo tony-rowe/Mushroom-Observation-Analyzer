@@ -31,42 +31,39 @@ export default function MapView() {
     <div className="fade-in space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-white mb-1">
+          <h1 className="text-2xl sm:text-3xl font-bold text-green-900 mb-1">
             Spatial Heatmap
           </h1>
-          <p className="text-gray-500 text-xs sm:text-sm">
+          <p className="text-green-700 text-xs sm:text-sm">
             {selectedSpecies
-              ? `Showing ${selectedSpecies.commonName} observations`
-              : 'All PNW edible mushroom observations'}
+              ? `Showing observations for ${selectedSpecies.commonName}`
+              : 'All cached PNW observations'}
           </p>
         </div>
       </div>
 
-      <div className="flex gap-2 flex-wrap">
-        <button
-          onClick={() => setSelectedTaxon(null)}
-          className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-all ${
-            !selectedTaxon
-              ? 'bg-mushroom-gold text-black'
-              : 'bg-green-100 text-green-800 hover:text-green-900 hover:bg-green-200'
-          }`}
+      <div className="glass-card p-4 flex flex-col sm:flex-row sm:items-center gap-3">
+        <label htmlFor="map-taxon" className="text-sm font-medium text-green-900 min-w-36">
+          Spatial Analysis Taxon
+        </label>
+        <select
+          id="map-taxon"
+          value={selectedTaxon || ''}
+          onChange={(event) => setSelectedTaxon(event.target.value ? parseInt(event.target.value, 10) : null)}
+          className="w-full sm:max-w-lg bg-white border border-green-300 rounded-xl px-3 py-2 text-sm text-green-900 focus:outline-none focus:border-mushroom-gold"
         >
-          All Species ({totalCount.toLocaleString()})
-        </button>
-        {species.map(s => (
-          <button
-            key={s.id}
-            onClick={() => setSelectedTaxon(s.taxonId === selectedTaxon ? null : s.taxonId)}
-            className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-all ${
-              selectedTaxon === s.taxonId
-                ? 'bg-mushroom-gold text-black'
-                : 'bg-green-100 text-green-800 hover:text-green-900 hover:bg-green-200'
-            }`}
-          >
-            <span className="hidden sm:inline">{s.commonName.replace(/ \(.*\)/, '').split(' ').slice(-1)[0]}</span>
-            <span className="sm:hidden">{s.commonName.split(' ').slice(-1)[0].substring(0, 3)}</span>
-          </button>
-        ))}
+          <option value="">All species ({totalCount.toLocaleString()})</option>
+          {species.map((s) => (
+            <option key={s.id} value={s.taxonId}>
+              {s.commonName}
+            </option>
+          ))}
+        </select>
+        {selectedSpecies && (
+          <p className="text-xs text-green-700">
+            Common name: <span className="font-semibold text-green-900">{selectedSpecies.commonName}</span>
+          </p>
+        )}
       </div>
 
       {loading ? (

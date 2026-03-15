@@ -4,7 +4,17 @@ import https from 'https';
 import http from 'http';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { initDb, getObservationStats, getGlobalStats, getHeatmapData, getObservationsForTaxon, getAllObservations } from './cache.js';
+import {
+  initDb,
+  getObservationStats,
+  getGlobalStats,
+  getHeatmapData,
+  getObservationsForTaxon,
+  getAllObservations,
+  getRollingObservationReport,
+  getRecentWindowSummary,
+  getCacheStatus
+} from './cache.js';
 import { syncSpecies, syncSpeciesBatch, fetchTaxonDetails } from './api.js';
 import { PNW_PLACE_IDS } from './species.js';
 import { getTopPicks, getSpeciesPredictions, getRegionPredictions, getRegionsGeoJSON, setCalibration, getCalibration } from './predictions.js';
@@ -180,6 +190,47 @@ app.get('/api/observations', (req, res) => {
       obs = getAllObservations();
     }
     res.json({ observations: obs.slice(0, limit), total: obs.length });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.get('/api/cache/status', (_req, res) => {
+  try {
+    res.json(getCacheStatus());
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.get('/api/reports/summary', (req, res) => {
+  try {
+    const days = Math.max(parseInt(req.query.days) || 35, 7);
+    const window = Math.max(parseInt(req.query.window) || 7, 2);
+    const taxonId = req.query.taxon_id ? parseInt(req.query.taxon_id) : null;
+
+    const rolling = getRollingObservationReport(days, window, taxonId);
+    const recent7d = getRecentWindowSummary(7, taxonId);
+    const previous7d = getRecentWindowSummary(14, taxonId);
+    const previousWeekOnly = Math.max(previous7d.total - recent7d.total, 0);
+
+    const speciesByTaxon = new Map(getAllActiveSpecies().map(s => [s.taxonId, s.commonName]));
+    const topSpecies = recent7d.topTaxa.map(item => ({
+      taxonId: item.taxon_id,
+      count: item.count,
+      commonName: speciesByTaxon.get(item.taxon_id) || `Taxon ${item.taxon_id}`
+    }));
+
+    res.json({
+      rolling,
+      recent7d: {
+        ...recent7d,
+        previousWeekTotal: previousWeekOnly,
+        deltaVsPreviousWeek: recent7d.total - previousWeekOnly,
+        topSpecies
+      },
+      cache: getCacheStatus()
+    });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

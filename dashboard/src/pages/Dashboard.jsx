@@ -53,8 +53,8 @@ export default function Dashboard() {
     return (
       <div className="fade-in">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-white mb-1">Dashboard</h1>
-          <p className="text-gray-500">Loading PNW mushroom data...</p>
+          <h1 className="text-3xl font-bold text-green-900 mb-1">Dashboard</h1>
+          <p className="text-green-700">Loading PNW observation data...</p>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 mb-6 md:mb-8">
           {[1,2,3,4].map(i => <SkeletonCard key={i} />)}
@@ -122,8 +122,8 @@ export default function Dashboard() {
       <div className="glass-card p-5">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h2 className="text-lg font-semibold text-white">Observation Heatmap</h2>
-            <p className="text-xs text-gray-500">Aggregated observations across configured PNW taxa</p>
+            <h2 className="text-lg font-semibold text-green-900">Observation Heatmap</h2>
+            <p className="text-xs text-green-700">Aggregated observations across configured PNW taxa</p>
           </div>
           <Link to="/map" className="btn-ghost text-xs">
             Full Map View →
@@ -138,20 +138,20 @@ export default function Dashboard() {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
         <div className="glass-card p-4 md:p-5">
-          <h2 className="text-base md:text-lg font-semibold text-white mb-1">Seasonal Activity</h2>
-          <p className="text-xs text-gray-500 mb-3 md:mb-4">Observations by month across all species</p>
+          <h2 className="text-base md:text-lg font-semibold text-green-900 mb-1">Seasonal Activity</h2>
+          <p className="text-xs text-green-700 mb-3 md:mb-4">Observations by month across all species</p>
           <SeasonalChart data={stats.byMonth || []} height={240} />
         </div>
         <div className="glass-card p-4 md:p-5">
-          <h2 className="text-base md:text-lg font-semibold text-white mb-1">Observations by Species</h2>
-          <p className="text-xs text-gray-500 mb-3 md:mb-4">Top species by observation count</p>
+          <h2 className="text-base md:text-lg font-semibold text-green-900 mb-1">Observations by Species</h2>
+          <p className="text-xs text-green-700 mb-3 md:mb-4">Top species by observation count</p>
           <MultiSpeciesChart speciesStats={speciesStats} height={240} />
         </div>
       </div>
 
       <div className="glass-card p-4 md:p-5">
-        <h2 className="text-base md:text-lg font-semibold text-white mb-1">Quality Distribution</h2>
-        <p className="text-xs text-gray-500 mb-3 md:mb-4">Observation verification grades</p>
+        <h2 className="text-base md:text-lg font-semibold text-green-900 mb-1">Quality Distribution</h2>
+        <p className="text-xs text-green-700 mb-3 md:mb-4">Observation verification grades</p>
         <div className="h-48 md:h-64">
           <QualityPieChart data={qualityData} height={200} />
         </div>
@@ -161,10 +161,10 @@ export default function Dashboard() {
         <div>
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h2 className="text-lg font-semibold text-white">
+              <h2 className="text-lg font-semibold text-green-900">
                 In Season — {MONTH_FULL[currentMonth - 1]}
               </h2>
-              <p className="text-xs text-gray-500">{inSeasonNow.length} species currently fruiting in the PNW</p>
+              <p className="text-xs text-green-700">{inSeasonNow.length} species currently fruiting in the PNW</p>
             </div>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
@@ -178,8 +178,8 @@ export default function Dashboard() {
       <div>
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h2 className="text-lg font-semibold text-white">All Tracked Species</h2>
-            <p className="text-xs text-gray-500">{species.length} configured taxa</p>
+            <h2 className="text-lg font-semibold text-green-900">All Tracked Species</h2>
+            <p className="text-xs text-green-700">{species.length} configured taxa</p>
           </div>
           <Link to="/species" className="btn-ghost text-xs">View All →</Link>
         </div>
