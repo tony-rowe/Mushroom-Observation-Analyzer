@@ -1,18 +1,22 @@
 import { useState } from 'react';
-import { useApi } from '../hooks/useApi';
+import { apiPost, useApi } from '../hooks/useApi';
 import SpeciesCard from '../components/SpeciesCard';
-import LoadingSpinner, { SkeletonCard } from '../components/LoadingSpinner';
-import { MONTHS } from '../utils/formatters';
+import { SkeletonCard } from '../components/LoadingSpinner';
 
 export default function SpeciesPage() {
-  const { data: speciesData, loading: speciesLoading } = useApi('/species');
-  const { data: statsData, loading: statsLoading } = useApi('/stats');
+  const { data: speciesData, loading: speciesLoading, refetch: refetchSpecies } = useApi('/species');
+  const { data: statsData, loading: statsLoading, refetch: refetchStats } = useApi('/stats');
+  const { data: builtinsData, loading: builtinsLoading, refetch: refetchBuiltins } = useApi('/species/builtins');
   const [filter, setFilter] = useState('all');
   const [search, setSearch] = useState('');
   const [sortBy, setSortBy] = useState('name');
+  const [speciesActionInFlight, setSpeciesActionInFlight] = useState('');
+  const [speciesActionMessage, setSpeciesActionMessage] = useState('');
 
   const species = speciesData?.species || [];
   const speciesStats = statsData?.species || [];
+  const builtinSpecies = builtinsData?.species || [];
+  const hiddenBuiltins = builtinSpecies.filter(s => s.hidden);
   const currentMonth = new Date().getMonth() + 1;
 
   let filtered = [...species];
@@ -47,7 +51,24 @@ export default function SpeciesPage() {
     filtered.sort((a, b) => (a.season?.start || 13) - (b.season?.start || 13));
   }
 
-  const isLoading = speciesLoading || statsLoading;
+  const isLoading = speciesLoading || statsLoading || builtinsLoading;
+
+  const setBuiltinVisibility = async (speciesId, hide) => {
+    setSpeciesActionInFlight(speciesId);
+    setSpeciesActionMessage('');
+    try {
+      const action = hide ? 'hide' : 'show';
+      await apiPost(`/species/builtins/${speciesId}/${action}`);
+      await Promise.all([refetchSpecies(), refetchStats(), refetchBuiltins()]);
+      setSpeciesActionMessage(
+        hide ? 'Built-in species hidden from active tracking.' : 'Built-in species restored to active tracking.'
+      );
+    } catch (err) {
+      setSpeciesActionMessage(`Failed to update species visibility: ${err.message || 'Unknown error'}`);
+    } finally {
+      setSpeciesActionInFlight('');
+    }
+  };
 
   return (
     <div className="fade-in space-y-6">
@@ -101,6 +122,33 @@ export default function SpeciesPage() {
         </select>
       </div>
 
+      {speciesActionMessage && (
+        <div className="rounded-xl border border-green-200 bg-green-50 px-3 py-2 text-xs text-green-800">
+          {speciesActionMessage}
+        </div>
+      )}
+
+      {hiddenBuiltins.length > 0 && (
+        <div className="glass-card p-4">
+          <h2 className="text-sm font-semibold text-green-900 mb-1">Hidden built-in species</h2>
+          <p className="text-xs text-green-700 mb-3">
+            These species are currently excluded from sync and dashboard views. Restore any species below.
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {hiddenBuiltins.map(s => (
+              <button
+                key={s.id}
+                onClick={() => setBuiltinVisibility(s.id, false)}
+                disabled={speciesActionInFlight === s.id}
+                className="px-3 py-1.5 rounded-lg text-xs bg-green-100 text-green-900 hover:bg-green-200 disabled:opacity-60"
+              >
+                {speciesActionInFlight === s.id ? 'Restoring…' : `Restore ${s.commonName}`}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       {isLoading ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-4">
           {Array.from({ length: 8 }, (_, i) => <SkeletonCard key={i} />)}
@@ -110,7 +158,18 @@ export default function SpeciesPage() {
           <p className="text-xs text-green-700">{filtered.length} species shown</p>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-4">
             {filtered.map(s => (
-              <SpeciesCard key={s.id} species={s} stats={speciesStats.find(st => st.id === s.id)} />
+              <div key={s.id} className="space-y-2">
+                <SpeciesCard species={s} stats={speciesStats.find(st => st.id === s.id)} />
+                {s.builtin && (
+                  <button
+                    onClick={() => setBuiltinVisibility(s.id, true)}
+                    disabled={speciesActionInFlight === s.id}
+                    className="w-full rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700 hover:bg-red-100 disabled:opacity-60"
+                  >
+                    {speciesActionInFlight === s.id ? 'Hiding…' : 'Hide built-in species'}
+                  </button>
+                )}
+              </div>
             ))}
           </div>
           {filtered.length === 0 && (

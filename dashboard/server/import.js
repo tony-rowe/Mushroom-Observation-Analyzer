@@ -23,6 +23,12 @@ function ensureImportTable() {
       created_at TEXT NOT NULL,
       updated_at TEXT NOT NULL
     );
+    CREATE TABLE IF NOT EXISTS builtin_species_visibility (
+      id TEXT PRIMARY KEY,
+      taxon_id INTEGER UNIQUE NOT NULL,
+      hidden INTEGER NOT NULL DEFAULT 0,
+      updated_at TEXT NOT NULL
+    );
   `);
   db.close();
 }
@@ -177,6 +183,51 @@ function getImportedSpecies() {
   }
 }
 
+function getHiddenBuiltinSpeciesIds() {
+  try {
+    const db = getDb();
+    const rows = db.prepare(
+      'SELECT id FROM builtin_species_visibility WHERE hidden = 1'
+    ).all();
+    db.close();
+    return new Set(rows.map(r => r.id));
+  } catch {
+    return new Set();
+  }
+}
+
+function getBuiltinSpeciesStatus() {
+  const hidden = getHiddenBuiltinSpeciesIds();
+  return ALL_SPECIES.map(species => ({
+    id: species.id,
+    taxonId: species.taxonId,
+    category: species.category,
+    commonName: species.commonName,
+    scientificName: species.scientificName,
+    hidden: hidden.has(species.id)
+  }));
+}
+
+function setBuiltinSpeciesHidden(id, hidden) {
+  const species = ALL_SPECIES.find(s => s.id === id);
+  if (!species) {
+    throw new Error(`Built-in species not found: ${id}`);
+  }
+
+  const db = getDb();
+  db.prepare(
+    `INSERT OR REPLACE INTO builtin_species_visibility (id, taxon_id, hidden, updated_at)
+     VALUES (?, ?, ?, ?)`
+  ).run(species.id, species.taxonId, hidden ? 1 : 0, new Date().toISOString());
+  db.close();
+
+  return {
+    id: species.id,
+    taxonId: species.taxonId,
+    hidden: !!hidden
+  };
+}
+
 function deleteImportedSpecies(id) {
   const db = getDb();
   db.prepare('DELETE FROM imported_species WHERE id = ?').run(id);
@@ -184,10 +235,15 @@ function deleteImportedSpecies(id) {
 }
 
 function getAllActiveSpecies() {
+  const hiddenBuiltinIds = getHiddenBuiltinSpeciesIds();
   const imported = getImportedSpecies();
   const existingIds = new Set(ALL_SPECIES.map(s => s.taxonId));
   const newImports = imported.filter(s => !existingIds.has(s.taxonId));
-  return [...ALL_SPECIES, ...newImports];
+  const activeBuiltins = ALL_SPECIES
+    .filter(s => !hiddenBuiltinIds.has(s.id))
+    .map(s => ({ ...s, builtin: true, imported: false }));
+  const activeImports = newImports.map(s => ({ ...s, builtin: false, imported: true }));
+  return [...activeBuiltins, ...activeImports];
 }
 
 function getActiveSpeciesForPredictions() {
@@ -205,6 +261,8 @@ export {
   importByTaxonId,
   getImportedSpecies,
   deleteImportedSpecies,
+  getBuiltinSpeciesStatus,
+  setBuiltinSpeciesHidden,
   getAllActiveSpecies,
   getActiveSpeciesForPredictions,
   getEcologyForSpecies,

@@ -24,7 +24,15 @@ import { runBacktest } from './backtest.js';
 import { loadCerts } from './ssl.js';
 import { ALL_SPECIES, CATEGORIES } from './all-species.js';
 import { getSpeciesPhotos, getQuizPhotos } from './photos.js';
-import { importByTaxonId, getAllActiveSpecies, ensureImportTable, getImportedSpecies, deleteImportedSpecies } from './import.js';
+import {
+  importByTaxonId,
+  getAllActiveSpecies,
+  ensureImportTable,
+  getImportedSpecies,
+  deleteImportedSpecies,
+  getBuiltinSpeciesStatus,
+  setBuiltinSpeciesHidden
+} from './import.js';
 import { ensurePhotoTable, bulkSyncAllPhotos, getAllPhotoStats, syncPhotosForSpecies, trimAllPhotos } from './photo-sync.js';
 import { fetchFirePerimeters, getAvailableYears, getFireSummary } from './fires.js';
 
@@ -44,6 +52,33 @@ app.get('/api/species', (req, res) => {
   let species = getAllActiveSpecies();
   if (category && category !== 'all') species = species.filter(s => s.category === category);
   res.json({ species, categories: CATEGORIES, placeIds: PNW_PLACE_IDS });
+});
+
+app.get('/api/species/builtins', (_req, res) => {
+  try {
+    const species = getBuiltinSpeciesStatus();
+    res.json({ species, total: species.length, hidden: species.filter(s => s.hidden).length });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/api/species/builtins/:id/hide', (req, res) => {
+  try {
+    const updated = setBuiltinSpeciesHidden(req.params.id, true);
+    res.json({ status: 'ok', ...updated });
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+app.post('/api/species/builtins/:id/show', (req, res) => {
+  try {
+    const updated = setBuiltinSpeciesHidden(req.params.id, false);
+    res.json({ status: 'ok', ...updated });
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
 });
 
 app.get('/api/species/:id', async (req, res) => {

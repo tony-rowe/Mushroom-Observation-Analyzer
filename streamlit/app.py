@@ -50,12 +50,46 @@ def parse_int_csv(text: str) -> list[int]:
     return sorted(set(values))
 
 
-def load_default_taxon_ids() -> list[int]:
-    species_js = Path(__file__).resolve().parents[1] / "dashboard" / "server" / "species.js"
+def load_builtin_species_map() -> dict[str, int]:
+    species_js = Path(__file__).resolve().parents[1] / "dashboard" / "server" / "all-species.js"
     if not species_js.exists():
-        return []
+        return {}
     content = species_js.read_text(encoding="utf-8")
-    return sorted({int(match) for match in re.findall(r"taxonId:\s*(\d+)", content)})
+    matches = re.findall(r"id:\s*'([^']+)'\s*,\s*taxonId:\s*(\d+)", content)
+    return {species_id: int(taxon_id) for species_id, taxon_id in matches}
+
+
+def load_default_taxon_ids(cache_db_path: Path | None = None) -> list[int]:
+    builtin_map = load_builtin_species_map()
+    if not builtin_map:
+        return []
+
+    taxon_ids = set(builtin_map.values())
+    db_path = cache_db_path or DASHBOARD_CACHE_DB
+    if not db_path.exists():
+        return sorted(taxon_ids)
+
+    try:
+        with sqlite3.connect(db_path) as conn:
+            conn.row_factory = sqlite3.Row
+
+            imported_taxon_rows = conn.execute("SELECT taxon_id FROM imported_species").fetchall()
+            for row in imported_taxon_rows:
+                taxon_id = row["taxon_id"]
+                if isinstance(taxon_id, int):
+                    taxon_ids.add(taxon_id)
+
+            hidden_taxon_rows = conn.execute(
+                "SELECT taxon_id FROM builtin_species_visibility WHERE hidden = 1"
+            ).fetchall()
+            hidden_taxa = {
+                row["taxon_id"] for row in hidden_taxon_rows if isinstance(row["taxon_id"], int)
+            }
+            taxon_ids.difference_update(hidden_taxa)
+    except sqlite3.Error:
+        return sorted(taxon_ids)
+
+    return sorted(taxon_ids)
 
 
 @st.cache_data(ttl=1800, show_spinner=False)
@@ -314,8 +348,6 @@ st.set_page_config(page_title="PNW iNaturalist Reporting", layout="wide")
 st.title("PNW iNaturalist Reporting Dashboard")
 st.caption("Efficient chained queries with local Streamlit caching for repeatable reporting.")
 
-default_taxon_ids = load_default_taxon_ids()
-
 with st.sidebar:
     st.header("Query Settings")
     data_source = st.selectbox(
@@ -357,6 +389,7 @@ with st.sidebar:
         value=str(DASHBOARD_CACHE_DB),
         help="Default cache location populated by the Express dashboard sync.",
     )
+    default_taxon_ids = load_default_taxon_ids(Path(cache_db_path))
 
     quality = st.multiselect(
         "Quality grades",

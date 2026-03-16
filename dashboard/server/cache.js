@@ -92,6 +92,44 @@ function upsertObservations(observations) {
   upsertMany(observations);
 }
 
+function replaceObservationsForTaxon(taxonId, observations) {
+  const rows = Array.isArray(observations) ? observations : [];
+  if (rows.length === 0) {
+    db.prepare('DELETE FROM observations WHERE taxon_id = ?').run(taxonId);
+    return;
+  }
+
+  const upsertStmt = db.prepare(`
+    INSERT OR REPLACE INTO observations
+    (id, taxon_id, species_guess, quality_grade, latitude, longitude, observed_on, place_guess, photo_url, user_login, created_at, updated_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `);
+  const insertSyncIdStmt = db.prepare('INSERT OR IGNORE INTO sync_ids (id) VALUES (?)');
+  const clearSyncIdsStmt = db.prepare('DELETE FROM sync_ids');
+  const pruneStmt = db.prepare(
+    'DELETE FROM observations WHERE taxon_id = ? AND id NOT IN (SELECT id FROM sync_ids)'
+  );
+
+  const replaceTxn = db.transaction((taxon, obsRows) => {
+    db.exec('CREATE TEMP TABLE IF NOT EXISTS sync_ids (id INTEGER PRIMARY KEY)');
+    clearSyncIdsStmt.run();
+
+    for (const o of obsRows) {
+      if (!o?.id) continue;
+      upsertStmt.run(
+        o.id, o.taxon_id, o.species_guess, o.quality_grade,
+        o.latitude, o.longitude, o.observed_on, o.place_guess,
+        o.photo_url, o.user_login, o.created_at, o.updated_at
+      );
+      insertSyncIdStmt.run(o.id);
+    }
+
+    pruneStmt.run(taxon);
+  });
+
+  replaceTxn(taxonId, rows);
+}
+
 function getObservationsForTaxon(taxonId) {
   return db.prepare('SELECT * FROM observations WHERE taxon_id = ? ORDER BY observed_on DESC').all(taxonId);
 }
@@ -352,6 +390,7 @@ export {
   getCached,
   setCache,
   upsertObservations,
+  replaceObservationsForTaxon,
   getObservationsForTaxon,
   getAllObservations,
   getObservationStats,

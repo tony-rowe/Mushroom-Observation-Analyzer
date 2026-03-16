@@ -29,9 +29,19 @@ export function useApi(endpoint, options = {}) {
   return { data, loading, error, refetch: fetchData };
 }
 
-export async function apiPost(endpoint) {
-  const res = await fetch(`${API_BASE}${endpoint}`, { method: 'POST' });
-  return res.json();
+export async function apiPost(endpoint, body = null, method = 'POST') {
+  const opts = { method, headers: {} };
+  if (body !== null && body !== undefined) {
+    opts.headers['Content-Type'] = 'application/json';
+    opts.body = JSON.stringify(body);
+  }
+
+  const res = await fetch(`${API_BASE}${endpoint}`, opts);
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    throw new Error(json.error || `HTTP ${res.status}`);
+  }
+  return json;
 }
 
 export async function apiGet(endpoint) {

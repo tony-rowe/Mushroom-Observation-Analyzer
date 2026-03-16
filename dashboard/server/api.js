@@ -1,5 +1,5 @@
 import {
-  getCached, setCache, upsertObservations, updateSyncStatus, getSyncStatus
+  getCached, setCache, replaceObservationsForTaxon, updateSyncStatus, getSyncStatus
 } from './cache.js';
 import { PNW_PLACE_IDS } from './species.js';
 
@@ -130,9 +130,7 @@ async function syncSpecies(taxonId, force = false) {
       console.warn(`Taxon ${taxonId} sync truncated at ${MAX_SPECIES_PAGES} pages (${allObs.length}/${totalResults}).`);
     }
 
-    if (allObs.length > 0) {
-      upsertObservations(allObs);
-    }
+    replaceObservationsForTaxon(taxonId, allObs);
     updateSyncStatus(taxonId, allObs.length, page);
 
     return { synced: true, cached: false, total: allObs.length, totalAvailable: totalResults, pageCount: page, truncated };
@@ -220,19 +218,18 @@ async function syncSpeciesBatch(taxonIds, force = false) {
       console.warn(`Batch sync truncated after ${MAX_BATCH_PAGES} pages for ${staleTaxa.length} taxa.`);
     }
 
-    if (allObs.length > 0) {
-      upsertObservations(allObs);
-    }
-
     const countsByTaxon = new Map(staleTaxa.map(taxonId => [taxonId, 0]));
+    const obsByTaxon = new Map(staleTaxa.map(taxonId => [taxonId, []]));
     for (const obs of allObs) {
-      if (countsByTaxon.has(obs.taxon_id)) {
+      if (obsByTaxon.has(obs.taxon_id)) {
+        obsByTaxon.get(obs.taxon_id).push(obs);
         countsByTaxon.set(obs.taxon_id, countsByTaxon.get(obs.taxon_id) + 1);
       }
     }
 
     const syncedTaxa = staleTaxa.map(taxonId => {
       const total = countsByTaxon.get(taxonId) || 0;
+      replaceObservationsForTaxon(taxonId, obsByTaxon.get(taxonId) || []);
       updateSyncStatus(taxonId, total, page);
       return { taxonId, synced: true, cached: false, total };
     });
