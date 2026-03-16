@@ -104,6 +104,7 @@ function replaceObservationsForTaxon(taxonId, observations) {
     (id, taxon_id, species_guess, quality_grade, latitude, longitude, observed_on, place_guess, photo_url, user_login, created_at, updated_at)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `);
+  db.exec('CREATE TEMP TABLE IF NOT EXISTS sync_ids (id INTEGER PRIMARY KEY)');
   const insertSyncIdStmt = db.prepare('INSERT OR IGNORE INTO sync_ids (id) VALUES (?)');
   const clearSyncIdsStmt = db.prepare('DELETE FROM sync_ids');
   const pruneStmt = db.prepare(
@@ -111,7 +112,6 @@ function replaceObservationsForTaxon(taxonId, observations) {
   );
 
   const replaceTxn = db.transaction((taxon, obsRows) => {
-    db.exec('CREATE TEMP TABLE IF NOT EXISTS sync_ids (id INTEGER PRIMARY KEY)');
     clearSyncIdsStmt.run();
 
     for (const o of obsRows) {

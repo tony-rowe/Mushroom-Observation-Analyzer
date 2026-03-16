@@ -15,7 +15,7 @@ import streamlit as st
 
 API_BASE = "https://api.inaturalist.org/v1"
 PER_PAGE = 200
-DEFAULT_PNW_PLACE_IDS = [10, 11]
+DEFAULT_PNW_PLACE_IDS = [10, 46]
 DEFAULT_DELAY_SECONDS = 1.1
 DEFAULT_MAX_RECORDS = 4000
 DEFAULT_MAX_PAGES = 60
@@ -366,7 +366,7 @@ with st.sidebar:
 
     place_ids_text = st.text_input(
         "PNW place IDs (comma-separated)",
-        value="10,11",
+        value="10,46",
         help="Defaults to Oregon and Washington.",
     )
     place_ids = parse_int_csv(place_ids_text) or DEFAULT_PNW_PLACE_IDS

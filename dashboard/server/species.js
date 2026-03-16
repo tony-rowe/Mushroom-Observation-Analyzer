@@ -241,7 +241,7 @@ const PNW_SPECIES = [
   }
 ];
 
-// Oregon + Washington only
-const PNW_PLACE_IDS = [10, 11];
+// Oregon (10) + Washington (46) only
+const PNW_PLACE_IDS = [10, 46];
 
 export { PNW_SPECIES, PNW_PLACE_IDS };

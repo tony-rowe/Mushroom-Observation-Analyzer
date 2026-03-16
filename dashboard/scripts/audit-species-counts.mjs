@@ -5,7 +5,7 @@ import { getAllActiveSpecies } from '../server/import.js';
 const DEFAULT_TAXA = [350511, 48215];
 const PER_PAGE = 200;
 const PLACE_OR = 10;
-const PLACE_WA = 11;
+const PLACE_WA = 46;
 
 function parseCliArgs(argv) {
   const args = argv.slice(2);
