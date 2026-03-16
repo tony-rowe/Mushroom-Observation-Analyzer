@@ -51,12 +51,20 @@ def parse_int_csv(text: str) -> list[int]:
 
 
 def load_builtin_species_map() -> dict[str, int]:
-    species_js = Path(__file__).resolve().parents[1] / "dashboard" / "server" / "all-species.js"
-    if not species_js.exists():
-        return {}
-    content = species_js.read_text(encoding="utf-8")
-    matches = re.findall(r"id:\s*'([^']+)'\s*,\s*taxonId:\s*(\d+)", content)
-    return {species_id: int(taxon_id) for species_id, taxon_id in matches}
+    server_dir = Path(__file__).resolve().parents[1] / "dashboard" / "server"
+    candidate_files = [
+        server_dir / "all-species.js",
+        server_dir / "species.js",
+    ]
+    # Streamlit Docker image includes species.js, while local dev may also have all-species.js.
+    for species_js in candidate_files:
+        if not species_js.exists():
+            continue
+        content = species_js.read_text(encoding="utf-8")
+        matches = re.findall(r"id:\s*['\"]([^'\"]+)['\"]\s*,\s*taxonId:\s*(\d+)", content)
+        if matches:
+            return {species_id: int(taxon_id) for species_id, taxon_id in matches}
+    return {}
 
 
 def load_default_taxon_ids(cache_db_path: Path | None = None) -> list[int]:
