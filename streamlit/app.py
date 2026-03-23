@@ -107,6 +107,7 @@ def load_observations_from_dashboard_cache(
     quality_grades: tuple[str, ...],
     max_records: int,
     enforce_pnw_bounds: bool,
+    years: tuple[int, ...] = (),
 ) -> list[dict]:
     if not Path(db_path).exists():
         return []
@@ -164,6 +165,26 @@ def load_observations_from_dashboard_cache(
     records = [dict(row) for row in rows]
     for row in records:
         row["url"] = f"https://www.inaturalist.org/observations/{row.get('observation_id')}"
+    
+    # Apply year filtering if specified
+    if years:
+        filtered_records = []
+        for row in records:
+            observed_on = row.get("observed_on")
+            if observed_on:
+                try:
+                    # Extract year from date string (format: YYYY-MM-DD)
+                    year = int(observed_on[:4])
+                    if year in years:
+                        filtered_records.append(row)
+                except (ValueError, TypeError):
+                    # If we can't parse the date, include it
+                    filtered_records.append(row)
+            else:
+                # Include records without dates
+                filtered_records.append(row)
+        records = filtered_records
+    
     return records
 
 
@@ -352,17 +373,29 @@ def load_observations_cached(
     return frame.to_dict(orient="records"), metadata
 
 
-st.set_page_config(page_title="PNW iNaturalist Reporting", layout="wide")
-st.title("PNW iNaturalist Reporting Dashboard")
-st.caption("Efficient chained queries with local Streamlit caching for repeatable reporting.")
+st.set_page_config(
+    page_title="PNW Mushroom Observation Analyzer",
+    page_icon="🍄",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
+
+st.title("🍄 PNW Mushroom Observation Analyzer")
+st.markdown("""
+<div style='background-color: #f0f2f6; padding: 1rem; border-radius: 0.5rem; margin-bottom: 1rem;'>
+<strong>Professional Dashboard</strong> • Comprehensive analysis of mushroom observations in the Pacific Northwest
+</div>
+""", unsafe_allow_html=True)
 
 with st.sidebar:
-    st.header("Query Settings")
+    st.header("⚙️ Query Settings")
+    
     data_source = st.selectbox(
         "Data Source",
         ("Dashboard SQLite cache (fastest)", "iNaturalist API (live fetch)"),
         help="Use the local dashboard cache whenever possible to minimize API calls.",
     )
+    
     mode = st.selectbox(
         "Taxon Scope",
         (
@@ -412,8 +445,22 @@ with st.sidebar:
         value=True,
         help="Filters out rows with coordinates outside Oregon/Washington bounds.",
     )
+    
+    # Year filtering
+    st.subheader("Time Filtering")
+    year_filter_enabled = st.checkbox("Filter by year", value=False, help="Enable year-based filtering")
+    selected_years = []
+    if year_filter_enabled:
+        current_year = datetime.now().year
+        available_years = list(range(2010, current_year + 1))
+        selected_years = st.multiselect(
+            "Select years",
+            options=available_years,
+            default=[current_year, current_year - 1],
+            help="Select specific years to filter observations"
+        )
 
-    if st.button("Clear Streamlit cache"):
+    if st.button("🔄 Clear Streamlit cache", type="secondary"):
         st.cache_data.clear()
         st.success("Cache cleared.")
 
@@ -436,6 +483,7 @@ if data_source.startswith("Dashboard SQLite"):
             quality_grades=tuple(quality),
             max_records=max_records,
             enforce_pnw_bounds=enforce_pnw_bounds,
+            years=tuple(selected_years) if year_filter_enabled and selected_years else (),
         )
         meta = {
             "query_count": 0,
@@ -458,6 +506,26 @@ else:
             iconic_taxa=iconic_taxa.strip(),
         )
         meta["source"] = "inat_api"
+        
+        # Apply year filtering for API-loaded data
+        if year_filter_enabled and selected_years:
+            filtered_records = []
+            for row in records:
+                observed_on = row.get("observed_on")
+                if observed_on:
+                    try:
+                        # Extract year from date string
+                        year = int(str(observed_on)[:4])
+                        if year in selected_years:
+                            filtered_records.append(row)
+                    except (ValueError, TypeError):
+                        # If we can't parse the date, include it
+                        filtered_records.append(row)
+                else:
+                    # Include records without dates
+                    filtered_records.append(row)
+            records = filtered_records
+            meta["record_count"] = len(records)
 
 if enforce_pnw_bounds:
     records, removed_out_of_region = filter_records_by_pnw_bounds(records)
@@ -530,21 +598,50 @@ top_taxa = (
     .sort_values("observations", ascending=False)
 )
 
-tab_rolling, tab_standard, tab_taxa = st.tabs(["Rolling 7-day report", "Monthly and quality", "Top taxa and momentum"])
+tab_rolling, tab_standard, tab_taxa = st.tabs(["📈 Temporal Trends", "📊 Monthly & Quality", "🔬 Species Analysis"])
 
 with tab_rolling:
+    st.header("📈 Temporal Trends Analysis")
+    
     if daily.empty:
-        st.info("Not enough dated observations to compute rolling metrics.")
+        st.info("Not enough dated observations to compute temporal metrics.")
     else:
-        rolling_fig = px.line(
-            daily,
-            x="day",
-            y=["observations", "rolling_7d"],
-            labels={"value": "Observations", "variable": "Series"},
-        )
-        rolling_fig.update_layout(height=380, margin=dict(l=10, r=10, t=30, b=10))
-        st.plotly_chart(rolling_fig, use_container_width=True)
-
+        # Enhanced time series analysis
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            # Daily trends with rolling average
+            rolling_fig = px.line(
+                daily,
+                x="day",
+                y=["observations", "rolling_7d"],
+                title="Daily Observations with 7-Day Rolling Average",
+                labels={"value": "Observations", "variable": "Series", "day": "Date"},
+            )
+            rolling_fig.update_layout(height=400)
+            st.plotly_chart(rolling_fig, use_container_width=True)
+        
+        with col2:
+            # Weekly aggregation
+            weekly = daily.copy()
+            weekly['week'] = weekly['day'].apply(lambda x: x.isocalendar()[1])
+            weekly['year'] = weekly['day'].apply(lambda x: x.year)
+            weekly_agg = weekly.groupby(['year', 'week']).agg({'observations': 'sum'}).reset_index()
+            weekly_agg['week_label'] = weekly_agg.apply(lambda x: f"{x['year']}-W{x['week']:02d}", axis=1)
+            
+            weekly_fig = px.bar(
+                weekly_agg.tail(20),  # Last 20 weeks
+                x='week_label',
+                y='observations',
+                title="Weekly Observation Trends (Last 20 Weeks)",
+                labels={'week_label': 'Week', 'observations': 'Observations'}
+            )
+            weekly_fig.update_layout(height=400, xaxis_tickangle=-45)
+            st.plotly_chart(weekly_fig, use_container_width=True)
+        
+        # Momentum analysis
+        st.subheader("Weekly Momentum Analysis")
+        
         now_utc = datetime.now(tz=timezone.utc)
         current_start = pd.Timestamp(now_utc.date() - timedelta(days=6))
         previous_start = pd.Timestamp(now_utc.date() - timedelta(days=13))
@@ -566,12 +663,81 @@ with tab_rolling:
             .count()
             .rename(columns={"observation_id": "previous_7d"})
         )
-        momentum = current_week.merge(previous_week, how="left", on=["taxon_id", "common_name"]).fillna(0)
-        momentum["delta"] = momentum["current_7d"] - momentum["previous_7d"]
-        momentum = momentum.sort_values(["delta", "current_7d"], ascending=False)
-
-        st.subheader("Weekly momentum by taxon")
-        st.dataframe(momentum.head(20), use_container_width=True, hide_index=True)
+        
+        if not current_week.empty:
+            momentum = current_week.merge(previous_week, how="left", on=["taxon_id", "common_name"]).fillna(0)
+            momentum["delta"] = momentum["current_7d"] - momentum["previous_7d"]
+            momentum["growth_rate"] = momentum.apply(
+                lambda x: (x["delta"] / x["previous_7d"] * 100) if x["previous_7d"] > 0 else float('inf'),
+                axis=1
+            )
+            momentum = momentum.sort_values(["delta", "current_7d"], ascending=False)
+            
+            # Display momentum metrics
+            total_current = momentum["current_7d"].sum()
+            total_previous = momentum["previous_7d"].sum()
+            total_delta = total_current - total_previous
+            total_growth = (total_delta / total_previous * 100) if total_previous > 0 else 0
+            
+            metric_col1, metric_col2, metric_col3 = st.columns(3)
+            with metric_col1:
+                st.metric("Current Week", f"{total_current:,}", f"{total_delta:+,}")
+            with metric_col2:
+                st.metric("Previous Week", f"{total_previous:,}")
+            with metric_col3:
+                st.metric("Growth Rate", f"{total_growth:.1f}%")
+            
+            # Top gainers and losers
+            gainers = momentum[momentum["delta"] > 0].head(10)
+            losers = momentum[momentum["delta"] < 0].sort_values("delta").head(10)
+            
+            gain_col, lose_col = st.columns(2)
+            
+            with gain_col:
+                st.subheader("📈 Top Gainers This Week")
+                if not gainers.empty:
+                    gainers_display = gainers.copy()
+                    gainers_display["display_name"] = gainers_display.apply(
+                        lambda x: x["common_name"] if pd.notna(x["common_name"]) and x["common_name"] != "" else f"Taxon {x['taxon_id']}",
+                        axis=1
+                    )
+                    st.dataframe(
+                        gainers_display[["display_name", "current_7d", "delta", "growth_rate"]].head(10),
+                        use_container_width=True,
+                        hide_index=True,
+                        column_config={
+                            "display_name": "Species",
+                            "current_7d": "Current Week",
+                            "delta": st.column_config.NumberColumn("Change", format="%+d"),
+                            "growth_rate": st.column_config.NumberColumn("Growth %", format="%.1f%%")
+                        }
+                    )
+                else:
+                    st.info("No gainers this week.")
+            
+            with lose_col:
+                st.subheader("📉 Top Decliners This Week")
+                if not losers.empty:
+                    losers_display = losers.copy()
+                    losers_display["display_name"] = losers_display.apply(
+                        lambda x: x["common_name"] if pd.notna(x["common_name"]) and x["common_name"] != "" else f"Taxon {x['taxon_id']}",
+                        axis=1
+                    )
+                    st.dataframe(
+                        losers_display[["display_name", "current_7d", "delta", "growth_rate"]].head(10),
+                        use_container_width=True,
+                        hide_index=True,
+                        column_config={
+                            "display_name": "Species",
+                            "current_7d": "Current Week",
+                            "delta": st.column_config.NumberColumn("Change", format="%+d"),
+                            "growth_rate": st.column_config.NumberColumn("Growth %", format="%.1f%%")
+                        }
+                    )
+                else:
+                    st.info("No decliners this week.")
+        else:
+            st.info("Not enough data for weekly momentum analysis.")
 
 with tab_standard:
     chart_col_1, chart_col_2 = st.columns(2)
@@ -588,13 +754,196 @@ with tab_standard:
         st.plotly_chart(quality_fig, use_container_width=True)
 
 with tab_taxa:
-    st.subheader("Top taxa by observation count")
-    st.dataframe(top_taxa.head(50), use_container_width=True, hide_index=True)
+    st.header("🔬 Comprehensive Species Analysis")
+    st.markdown("Observation counts sorted by total descending, with detailed analysis of species distribution.")
+    
+    # Summary metrics
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        st.metric("Total Species", f"{len(top_taxa):,}")
+    with col2:
+        st.metric("Total Observations", f"{top_taxa['observations'].sum():,}")
+    with col3:
+        rare_species = len(top_taxa[top_taxa['observations'] == 1])
+        st.metric("Species with 1 Observation", f"{rare_species:,}")
+    
+    # Distribution analysis
+    st.subheader("Observation Distribution by Species")
+    
+    # Create bins for observation counts
+    if not top_taxa.empty:
+        # Calculate distribution
+        obs_bins = pd.cut(top_taxa['observations'], 
+                         bins=[0, 1, 5, 10, 20, 50, 100, 500, 1000, float('inf')],
+                         labels=['1', '2-5', '6-10', '11-20', '21-50', '51-100', '101-500', '501-1000', '1000+'])
+        bin_counts = obs_bins.value_counts().sort_index()
+        
+        # Create bar chart
+        dist_fig = px.bar(
+            x=bin_counts.index.astype(str),
+            y=bin_counts.values,
+            title="How Many Species Have How Many Observations?",
+            labels={'x': 'Observation Range', 'y': 'Number of Species'}
+        )
+        dist_fig.update_layout(height=400)
+        st.plotly_chart(dist_fig, use_container_width=True)
+    
+    # Interactive species explorer
+    st.subheader("Species Observation Explorer")
+    
+    # Filters
+    filter_col1, filter_col2, filter_col3 = st.columns(3)
+    with filter_col1:
+        min_obs_filter = st.number_input("Minimum observations", min_value=1, max_value=1000, value=1, step=1)
+    with filter_col2:
+        max_obs_filter = st.number_input("Maximum observations", 
+                                        min_value=1, 
+                                        max_value=int(top_taxa['observations'].max()) if not top_taxa.empty else 1000,
+                                        value=int(top_taxa['observations'].max()) if not top_taxa.empty else 100,
+                                        step=1)
+    with filter_col3:
+        display_limit = st.slider("Number to display", 10, 500, 100)
+    
+    # Apply filters
+    filtered_species = top_taxa[
+        (top_taxa['observations'] >= min_obs_filter) & 
+        (top_taxa['observations'] <= max_obs_filter)
+    ].copy()
+    
+    # Create display name
+    filtered_species['display_name'] = filtered_species.apply(
+        lambda x: f"{x['common_name']} ({x['taxon_name']})" if pd.notna(x['common_name']) and x['common_name'] != '' else x['taxon_name'],
+        axis=1
+    )
+    
+    if not filtered_species.empty:
+        # Show filtered results
+        st.dataframe(
+            filtered_species[['display_name', 'observations', 'taxon_id']].head(display_limit),
+            use_container_width=True,
+            hide_index=True,
+            column_config={
+                "display_name": "Species Name",
+                "observations": st.column_config.NumberColumn("Observations", format="%d"),
+                "taxon_id": st.column_config.NumberColumn("Taxon ID", format="%d")
+            }
+        )
+        
+        # Summary
+        st.info(f"Showing {min(display_limit, len(filtered_species))} of {len(filtered_species):,} species with {filtered_species['observations'].sum():,} total observations.")
+        
+        # Export
+        csv_data = filtered_species[['taxon_id', 'taxon_name', 'common_name', 'observations']].to_csv(index=False).encode('utf-8')
+        st.download_button(
+            label="📥 Download Filtered Species Data",
+            data=csv_data,
+            file_name=f"filtered_species_{datetime.now().date().isoformat()}.csv",
+            mime="text/csv"
+        )
+    else:
+        st.warning("No species match the selected criteria.")
+    
+    # Rare species section
+    st.subheader("Rare Species (Single Observations)")
+    single_obs_species = top_taxa[top_taxa['observations'] == 1]
+    
+    if not single_obs_species.empty:
+        st.success(f"Found {len(single_obs_species):,} species with only one observation.")
+        
+        # Show rare species
+        rare_display = single_obs_species.copy()
+        rare_display['display_name'] = rare_display.apply(
+            lambda x: f"{x['common_name']} ({x['taxon_name']})" if pd.notna(x['common_name']) and x['common_name'] != '' else x['taxon_name'],
+            axis=1
+        )
+        
+        st.dataframe(
+            rare_display[['display_name', 'taxon_id']].head(50),
+            use_container_width=True,
+            hide_index=True,
+            column_config={
+                "display_name": "Species Name",
+                "taxon_id": st.column_config.NumberColumn("Taxon ID", format="%d")
+            }
+        )
+        
+        if len(single_obs_species) > 50:
+            st.caption(f"Showing 50 of {len(single_obs_species):,} rare species.")
+    else:
+        st.info("No species with only one observation in the current dataset.")
 
-map_df = df.dropna(subset=["latitude", "longitude"])[["latitude", "longitude"]]
-if not map_df.empty:
-    st.subheader("Observation map")
-    st.map(map_df, size=5)
+# Enhanced geographic analysis
+st.header("🗺️ Geographic Analysis")
+st.markdown("Visualizing where observations are occurring across the Pacific Northwest.")
+
+if not df.empty and df['latitude'].notna().any() and df['longitude'].notna().any():
+    # Create map dataframe
+    map_df = df.dropna(subset=["latitude", "longitude"]).copy()
+    
+    # Add density calculation (simplified)
+    map_df['location_group'] = map_df.apply(
+        lambda x: f"{round(x['latitude'], 2)},{round(x['longitude'], 2)}", axis=1
+    )
+    location_counts = map_df['location_group'].value_counts().reset_index()
+    location_counts.columns = ['location_group', 'observation_count']
+    
+    # Merge back to get coordinates
+    map_df = map_df.merge(location_counts, on='location_group')
+    
+    # Create tabs for different map views
+    map_tab1, map_tab2, map_tab3 = st.tabs(["Basic Map", "Density Heatmap", "Location Insights"])
+    
+    with map_tab1:
+        st.subheader("Observation Locations")
+        st.map(map_df[['latitude', 'longitude']], size=5)
+        st.caption(f"Showing {len(map_df):,} observations with coordinates.")
+    
+    with map_tab2:
+        st.subheader("Observation Density")
+        # Create a simple heatmap using scatter plot with size based on density
+        if len(map_df) > 0:
+            # Sample to avoid overcrowding
+            sample_df = map_df.sample(min(1000, len(map_df)))
+            heat_fig = px.scatter_mapbox(
+                sample_df,
+                lat='latitude',
+                lon='longitude',
+                size='observation_count',
+                size_max=20,
+                zoom=6,
+                height=500,
+                title="Observation Density (size indicates number of observations at location)"
+            )
+            heat_fig.update_layout(mapbox_style="open-street-map")
+            heat_fig.update_layout(margin={"r":0,"t":30,"l":0,"b":0})
+            st.plotly_chart(heat_fig, use_container_width=True)
+    
+    with map_tab3:
+        st.subheader("Location Insights")
+        
+        # Top locations by observation count
+        top_locations = map_df.groupby('place_guess').size().reset_index(name='count').sort_values('count', ascending=False).head(10)
+        
+        if not top_locations.empty:
+            st.write("**Top 10 Locations by Observation Count:**")
+            for idx, row in top_locations.iterrows():
+                st.write(f"{idx+1}. {row['place_guess'] or 'Unknown location'}: {row['count']} observations")
+        
+        # Geographic distribution stats
+        col1, col2 = st.columns(2)
+        with col1:
+            unique_locations = map_df['place_guess'].nunique()
+            st.metric("Unique Locations", f"{unique_locations:,}")
+        
+        with col2:
+            avg_obs_per_location = len(map_df) / unique_locations if unique_locations > 0 else 0
+            st.metric("Avg Observations per Location", f"{avg_obs_per_location:.1f}")
+        
+        # Location completeness
+        coord_completeness = (df['latitude'].notna() & df['longitude'].notna()).sum() / len(df) * 100
+        st.progress(coord_completeness / 100, text=f"Observations with coordinates: {coord_completeness:.1f}%")
+else:
+    st.warning("No geographic data available for mapping. Ensure observations have latitude and longitude coordinates.")
 
 st.subheader("Raw observations")
 display_df = df[
